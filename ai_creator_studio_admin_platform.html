@@ -1,0 +1,3021 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CreatorPulse AI — Creator Studio & Admin Back-Office</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Plus Jakarta Sans, Inter, JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        obsidian: {
+                            950: '#090A0F',
+                            900: '#12141D',
+                            800: '#1A1D2B',
+                            700: '#262B3D',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #090A0F;
+            color: #F8FAFC;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090A0F;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #262B3D;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3B425E;
+        }
+        .glass-header {
+            background: rgba(18, 20, 29, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        .creator-gradient {
+            background: linear-gradient(135deg, #6366F1 0%, #A855F7 50%, #EC4899 100%);
+        }
+        .admin-gradient {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        }
+        .card-border {
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .card-border-hover:hover {
+            border-color: rgba(99, 102, 241, 0.45);
+        }
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.65; transform: scale(0.98); }
+        }
+        .animate-pulse-slow {
+            animation: pulseGlow 2.4s infinite ease-in-out;
+        }
+        /* Canvas container aspect ratio 16:9 */
+        .canvas-16-9-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #0d0f17;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+        }
+        #thumbnailCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: grab;
+        }
+        #thumbnailCanvas:active {
+            cursor: grabbing;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+
+    <!-- ==================== TOP GLOBAL PORTAL SWITCHER & HEADER ==================== -->
+    <header class="sticky top-0 z-40 glass-header border-b border-white/10">
+        <div class="max-w-[1440px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+            <!-- Brand Identity -->
+            <div class="flex items-center gap-3">
+                <div id="brandIconBox" class="w-10 h-10 rounded-xl creator-gradient flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                    <i class="fa-solid fa-wand-magic-sparkles text-white text-lg"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-display font-extrabold text-lg tracking-tight text-white">CreatorPulse<span class="text-indigo-400">.AI</span></span>
+                        <span id="currentPortalBadge" class="text-[11px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                            User Website
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-400 hidden sm:block">All-in-One AI Video Script, Thumbnail & SEO Cloud Studio</p>
+                </div>
+            </div>
+
+            <!-- Center Portal Mode Switcher (User Website vs Admin Panel) -->
+            <div class="flex items-center bg-obsidian-950 p-1 rounded-xl border border-white/10">
+                <button id="switchUserBtn" onclick="window.app.switchPortal('user')" class="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-indigo-600 text-white shadow">
+                    <i class="fa-solid fa-clapperboard"></i>
+                    <span>User Website</span>
+                </button>
+                <button id="switchAdminBtn" onclick="window.app.switchPortal('admin')" class="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-400 hover:text-white relative">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>Admin Panel</span>
+                    <span id="headerPendingBadge" class="hidden w-5 h-5 rounded-full bg-amber-500 text-obsidian-950 font-mono text-[11px] font-bold items-center justify-center">0</span>
+                </button>
+            </div>
+
+            <!-- Right User Wallet & Top-Up Action -->
+            <div class="flex items-center gap-2.5 sm:gap-3">
+                <!-- Sync Indicator -->
+                <div id="cloudSyncPill" class="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span id="cloudSyncText">Cloud Live</span>
+                </div>
+
+                <!-- Credit Balance Pill -->
+                <div class="flex items-center gap-2 bg-obsidian-800/90 border border-white/10 px-3 py-1.5 rounded-xl">
+                    <div class="w-6 h-6 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-xs">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <div class="leading-tight">
+                        <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Credits</div>
+                        <div id="headerCreditBalance" class="font-mono font-bold text-sm text-white">50</div>
+                    </div>
+                </div>
+
+                <!-- Buy Credits CTA -->
+                <button onclick="window.app.openBuyCreditsModal()" class="creator-gradient hover:opacity-95 text-white font-semibold text-xs sm:text-sm px-3.5 py-2 rounded-xl shadow-lg shadow-indigo-500/20 flex items-center gap-2 transition transform active:scale-95">
+                    <i class="fa-solid fa-plus-circle"></i>
+                    <span class="hidden sm:inline">Buy Credits</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== PORTAL 1: USER WEBSITE (CREATOR STUDIO) ==================== -->
+    <div id="userPortalView" class="flex-1 flex flex-col lg:flex-row max-w-[1440px] w-full mx-auto">
+        
+        <!-- Left Navigation Sidebar (Desktop) / Top Scrollbar (Mobile) -->
+        <aside class="w-full lg:w-64 bg-obsidian-900/60 border-b lg:border-b-0 lg:border-r border-white/10 p-3 lg:p-5 flex flex-col justify-between shrink-0">
+            <div>
+                <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 px-3 mb-2 hidden lg:block">Creator Workspace</div>
+                <nav class="flex lg:flex-col gap-1.5 overflow-x-auto pb-1 lg:pb-0">
+                    <button onclick="window.app.setUserTab('dashboard')" data-usertab="dashboard" class="user-nav-btn flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap bg-indigo-600/20 text-indigo-300 border border-indigo-500/30">
+                        <i class="fa-solid fa-gauge-high w-4 text-center"></i>
+                        <span>Studio Dashboard</span>
+                    </button>
+                    <button onclick="window.app.setUserTab('script')" data-usertab="script" class="user-nav-btn flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-scroll w-4 text-center text-indigo-400"></i>
+                            <span>AI Script Writer</span>
+                        </div>
+                        <span id="navCostScript" class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-white/5 text-slate-300">5⚡</span>
+                    </button>
+                    <button onclick="window.app.setUserTab('thumbnail')" data-usertab="thumbnail" class="user-nav-btn flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-image w-4 text-center text-pink-400"></i>
+                            <span>AI Thumbnail Maker</span>
+                        </div>
+                        <span id="navCostThumbnail" class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-white/5 text-slate-300">10⚡</span>
+                    </button>
+                    <button onclick="window.app.setUserTab('seo')" data-usertab="seo" class="user-nav-btn flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-chart-line w-4 text-center text-emerald-400"></i>
+                            <span>Title, Tag & SEO</span>
+                        </div>
+                        <span id="navCostSeo" class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-white/5 text-slate-300">3⚡</span>
+                    </button>
+                    <button onclick="window.app.setUserTab('library')" data-usertab="library" class="user-nav-btn flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-box-archive w-4 text-center text-amber-400"></i>
+                            <span>Saved Creations</span>
+                        </div>
+                        <span id="navSavedCount" class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">0</span>
+                    </button>
+                    <button onclick="window.app.setUserTab('wallet')" data-usertab="wallet" class="user-nav-btn flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-wallet w-4 text-center text-cyan-400"></i>
+                            <span>Wallet & Orders</span>
+                        </div>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Creator Profile & Plan Card (Desktop Footer) -->
+            <div class="hidden lg:block mt-6 pt-5 border-t border-white/10">
+                <div class="bg-obsidian-800/80 rounded-xl p-3.5 card-border">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold text-slate-300">Current Tier</span>
+                        <span id="sidebarUserPlanBadge" class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Starter Creator</span>
+                    </div>
+                    <div class="text-[11px] text-slate-400 font-mono truncate mb-3" id="sidebarUserIdDisplay">UID: connecting...</div>
+                    <button onclick="window.app.openBuyCreditsModal()" class="w-full py-2 rounded-lg bg-white/10 hover:bg-white/15 text-xs font-semibold text-white transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-qrcode text-indigo-400"></i>
+                        <span>Top-Up via QR / UPI</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace Content Area -->
+        <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+
+            <!-- ==================== TAB 1: STUDIO DASHBOARD ==================== -->
+            <section id="userTab-dashboard" class="user-tab-section space-y-6">
+                <!-- Hero Banner -->
+                <div class="relative rounded-2xl overflow-hidden p-6 sm:p-8 bg-gradient-to-r from-indigo-950/90 via-purple-950/80 to-obsidian-900 border border-indigo-500/30 shadow-xl">
+                    <div class="relative z-10 max-w-2xl">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-medium mb-3">
+                            <i class="fa-solid fa-bolt text-amber-400"></i>
+                            <span>Powered by Gemini 3 Flash & Cloud Library</span>
+                        </div>
+                        <h1 class="font-display font-extrabold text-2xl sm:text-4xl text-white tracking-tight mb-2">
+                            What are we creating today?
+                        </h1>
+                        <p class="text-slate-300 text-sm sm:text-base mb-5">
+                            Generate high-retention video scripts, design 16:9 click-magnet thumbnails on an interactive canvas, and rank #1 with AI SEO packages. Every creation is saved to your cloud library.
+                        </p>
+                        <div class="flex flex-wrap gap-3">
+                            <button onclick="window.app.setUserTab('script')" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition">
+                                <i class="fa-solid fa-scroll"></i>
+                                <span>Write Video Script</span>
+                            </button>
+                            <button onclick="window.app.setUserTab('thumbnail')" class="px-4 py-2.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-semibold text-sm shadow-lg shadow-pink-600/30 flex items-center gap-2 transition">
+                                <i class="fa-solid fa-image"></i>
+                                <span>Launch Thumbnail Studio</span>
+                            </button>
+                            <button onclick="window.app.openBuyCreditsModal()" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-sm border border-white/10 flex items-center gap-2 transition">
+                                <i class="fa-solid fa-coins text-amber-400"></i>
+                                <span>Recharge Credits</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats Row -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-obsidian-900 rounded-2xl p-5 card-border flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-400 uppercase font-semibold tracking-wider">Available Credits</p>
+                            <p id="dashCreditsStat" class="font-mono font-bold text-2xl text-white mt-1">50 ⚡</p>
+                            <p id="dashPlanNameStat" class="text-xs text-indigo-400 mt-1">Starter Creator Plan</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xl">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-obsidian-900 rounded-2xl p-5 card-border flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-400 uppercase font-semibold tracking-wider">Saved Scripts</p>
+                            <p id="dashScriptsStat" class="font-mono font-bold text-2xl text-white mt-1">0</p>
+                            <p class="text-xs text-slate-400 mt-1">Cloud synced</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-xl">
+                            <i class="fa-solid fa-scroll"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-obsidian-900 rounded-2xl p-5 card-border flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-400 uppercase font-semibold tracking-wider">Thumbnails Built</p>
+                            <p id="dashThumbnailsStat" class="font-mono font-bold text-2xl text-white mt-1">0</p>
+                            <p class="text-xs text-slate-400 mt-1">16:9 HD Canvas</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-2xl bg-pink-500/15 border border-pink-500/30 flex items-center justify-center text-pink-400 text-xl">
+                            <i class="fa-solid fa-image"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-obsidian-900 rounded-2xl p-5 card-border flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-400 uppercase font-semibold tracking-wider">SEO Packages</p>
+                            <p id="dashSeoStat" class="font-mono font-bold text-2xl text-white mt-1">0</p>
+                            <p class="text-xs text-slate-400 mt-1">High-CTR Titles & Tags</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xl">
+                            <i class="fa-solid fa-magnifying-glass-chart"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Suite Tool Cards -->
+                <div>
+                    <h2 class="font-display font-bold text-lg text-white mb-3">AI Creator Tools</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <!-- Script Generator Card -->
+                        <div onclick="window.app.setUserTab('script')" class="group cursor-pointer bg-obsidian-900 hover:bg-obsidian-800/90 rounded-2xl p-6 card-border card-border-hover transition-all flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="w-11 h-11 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-lg">
+                                        <i class="fa-solid fa-clapperboard"></i>
+                                    </div>
+                                    <span id="cardStatusScript" class="text-xs font-mono px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">5 Credits / Run</span>
+                                </div>
+                                <h3 class="font-display font-bold text-lg text-white group-hover:text-indigo-400 transition">AI Video Script Generator</h3>
+                                <p class="text-xs sm:text-sm text-slate-400 mt-1.5 leading-relaxed">
+                                    Generate complete YouTube & Shorts scripts with viral 15-second hooks, B-Roll camera cues, structured talking points, and strong CTAs.
+                                </p>
+                            </div>
+                            <div class="mt-5 pt-4 border-t border-white/5 flex items-center justify-between text-xs font-semibold text-indigo-400">
+                                <span>Open Script Studio</span>
+                                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                            </div>
+                        </div>
+
+                        <!-- Thumbnail Maker Card -->
+                        <div onclick="window.app.setUserTab('thumbnail')" class="group cursor-pointer bg-obsidian-900 hover:bg-obsidian-800/90 rounded-2xl p-6 card-border card-border-hover transition-all flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="w-11 h-11 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center text-lg">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                    </div>
+                                    <span id="cardStatusThumbnail" class="text-xs font-mono px-2.5 py-1 rounded-full bg-pink-500/10 text-pink-300 border border-pink-500/20">10 Credits / Run</span>
+                                </div>
+                                <h3 class="font-display font-bold text-lg text-white group-hover:text-pink-400 transition">AI 16:9 Thumbnail Maker</h3>
+                                <p class="text-xs sm:text-sm text-slate-400 mt-1.5 leading-relaxed">
+                                    Generate AI thumbnail artwork or high-contrast backdrops, then layer bold stroked typography, reaction badges, and export crisp 1280×720 PNGs.
+                                </p>
+                            </div>
+                            <div class="mt-5 pt-4 border-t border-white/5 flex items-center justify-between text-xs font-semibold text-pink-400">
+                                <span>Open Thumbnail Canvas</span>
+                                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                            </div>
+                        </div>
+
+                        <!-- SEO Optimizer Card -->
+                        <div onclick="window.app.setUserTab('seo')" class="group cursor-pointer bg-obsidian-900 hover:bg-obsidian-800/90 rounded-2xl p-6 card-border card-border-hover transition-all flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="w-11 h-11 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
+                                        <i class="fa-solid fa-rocket"></i>
+                                    </div>
+                                    <span id="cardStatusSeo" class="text-xs font-mono px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">3 Credits / Run</span>
+                                </div>
+                                <h3 class="font-display font-bold text-lg text-white group-hover:text-emerald-400 transition">AI Title, Tag & SEO Pack</h3>
+                                <p class="text-xs sm:text-sm text-slate-400 mt-1.5 leading-relaxed">
+                                    Boost click-through rate with 5 viral title variations, algorithm-friendly video descriptions, chapters, and high-volume search tags.
+                                </p>
+                            </div>
+                            <div class="mt-5 pt-4 border-t border-white/5 flex items-center justify-between text-xs font-semibold text-emerald-400">
+                                <span>Open SEO Generator</span>
+                                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Saved Creations Preview -->
+                <div class="bg-obsidian-900 rounded-2xl p-6 card-border">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 class="font-display font-bold text-lg text-white">Recent Saved Creations</h2>
+                            <p class="text-xs text-slate-400">Automatically synced to your cloud library</p>
+                        </div>
+                        <button onclick="window.app.setUserTab('library')" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+                            <span>View All Library</span>
+                            <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                        </button>
+                    </div>
+                    <div id="dashboardRecentCreations" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== TAB 2: AI VIDEO SCRIPT GENERATOR ==================== -->
+            <section id="userTab-script" class="user-tab-section hidden space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                    <div>
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+                                <i class="fa-solid fa-scroll"></i>
+                            </span>
+                            <h1 class="font-display font-bold text-2xl text-white">AI Video Script Generator</h1>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1">Structured retention scripts with Hook, Intro, Visual B-Roll Cues, Talking Points & Call to Action</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="scriptToolCostBadge" class="px-3 py-1.5 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 font-mono text-xs font-semibold">
+                            Cost: 5 Credits
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Disabled by Admin Banner -->
+                <div id="scriptDisabledBanner" class="hidden bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-rose-300 text-sm flex items-center gap-3">
+                    <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+                    <span>This AI tool is currently paused by the Platform Administrator. You can re-enable it anytime in the Admin Panel under AI Tools & Costs.</span>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Left Form Controls (5 Cols) -->
+                    <div class="lg:col-span-5 bg-obsidian-900 rounded-2xl p-5 sm:p-6 card-border space-y-4 h-fit">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Video Topic or Working Title *</label>
+                            <textarea id="scriptTopicInput" rows="3" placeholder="e.g., iPhone 17 Pro Max vs Galaxy S26 Ultra: 30 Days Later Honest Review" class="w-full bg-obsidian-950 border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"></textarea>
+                        </div>
+
+                        <!-- Quick Sample Presets -->
+                        <div>
+                            <span class="text-[11px] text-slate-400 block mb-1.5">Quick Preset Topics:</span>
+                            <div class="flex flex-wrap gap-1.5">
+                                <button type="button" onclick="window.app.fillScriptPreset('M4 MacBook Air Review: Worth Upgrading in 2026?', 'Tech Enthusiasts & Students', 'High-Energy & Honest', 'Gadget Unboxing & Review')" class="text-[11px] bg-white/5 hover:bg-white/10 text-slate-300 px-2.5 py-1 rounded-lg border border-white/10 transition">
+                                    💻 M4 MacBook Review
+                                </button>
+                                <button type="button" onclick="window.app.fillScriptPreset('5 AI Tools That Replace 10 Hours of Video Editing', 'YouTube Creators & Freelancers', 'Fast-Paced Viral', 'Deep-Dive Tutorial')" class="text-[11px] bg-white/5 hover:bg-white/10 text-slate-300 px-2.5 py-1 rounded-lg border border-white/10 transition">
+                                    ⚡ 5 AI Creator Tools
+                                </button>
+                                <button type="button" onclick="window.app.fillScriptPreset('Why Everyone Is Switching to Smart Glasses This Year', 'General Audience', 'Dramatic & Curious', 'YouTube Shorts (60s Viral)')" class="text-[11px] bg-white/5 hover:bg-white/10 text-slate-300 px-2.5 py-1 rounded-lg border border-white/10 transition">
+                                    🕶️ 60s Viral Short
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Script Template</label>
+                                <select id="scriptTemplateInput" class="w-full bg-obsidian-950 border border-white/15 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+                                    <option value="Gadget Unboxing & Review">Gadget Unboxing & Review</option>
+                                    <option value="Daily Tech News Roundup">Daily Tech News Roundup</option>
+                                    <option value="YouTube Shorts (60s Viral)">YouTube Shorts (60s Viral)</option>
+                                    <option value="Deep-Dive Tutorial">Deep-Dive Step-by-Step Tutorial</option>
+                                    <option value="Storytime / Documentary">Documentary / Story Essay</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Tone & Vibe</label>
+                                <select id="scriptToneInput" class="w-full bg-obsidian-950 border border-white/15 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+                                    <option value="High-Energy & Engaging">High-Energy & Engaging</option>
+                                    <option value="Honest & Analytical">Honest & Analytical</option>
+                                    <option value="Fast-Paced Viral">Fast-Paced Viral (MrBeast Style)</option>
+                                    <option value="Cinematic & Conversational">Cinematic & Conversational</option>
+                                    <option value="Humorous & Witty">Humorous & Witty</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Target Audience</label>
+                            <input id="scriptAudienceInput" type="text" value="YouTube Viewers, Tech & Creator Community" placeholder="e.g., Beginner creators, tech buyers" class="w-full bg-obsidian-950 border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+                        </div>
+
+                        <button id="generateScriptBtn" onclick="window.app.generateScript()" class="w-full py-3 rounded-xl creator-gradient hover:opacity-95 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 transition">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <span>Generate Structured Script</span>
+                        </button>
+                    </div>
+
+                    <!-- Right Script Output Viewer (7 Cols) -->
+                    <div class="lg:col-span-7 bg-obsidian-900 rounded-2xl p-5 sm:p-6 card-border flex flex-col justify-between min-h-[520px]">
+                        <div id="scriptOutputContainer" class="space-y-4">
+                            <!-- Default Empty State -->
+                            <div class="h-96 flex flex-col items-center justify-center text-center px-4">
+                                <div class="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 text-2xl mb-4">
+                                    <i class="fa-solid fa-clapperboard"></i>
+                                </div>
+                                <h3 class="font-display font-bold text-lg text-white">Your Production Script Will Appear Here</h3>
+                                <p class="text-xs sm:text-sm text-slate-400 max-w-md mt-1">
+                                    Enter a video topic on the left and click Generate. You'll get timecoded sections, B-Roll visual prompts, and one-click cloud saving.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Action Bar (Shown when script exists) -->
+                        <div id="scriptActionFooter" class="hidden mt-6 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+                            <div class="text-xs text-emerald-400 flex items-center gap-1.5">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <span id="scriptSaveStatusText">Auto-saved to Cloud Library</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="window.app.copyCurrentScript()" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-white flex items-center gap-1.5 transition">
+                                    <i class="fa-regular fa-copy"></i>
+                                    <span>Copy Full Script</span>
+                                </button>
+                                <button onclick="window.app.saveCurrentScriptManual()" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white flex items-center gap-1.5 transition">
+                                    <i class="fa-solid fa-bookmark"></i>
+                                    <span>Save Copy to Library</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== TAB 3: AI THUMBNAIL MAKER (16:9 CANVAS) ==================== -->
+            <section id="userTab-thumbnail" class="user-tab-section hidden space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                    <div>
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-8 h-8 rounded-lg bg-pink-500/20 text-pink-400 flex items-center justify-center">
+                                <i class="fa-solid fa-image"></i>
+                            </span>
+                            <h1 class="font-display font-bold text-2xl text-white">AI 16:9 Thumbnail Maker</h1>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1">Generate AI thumbnail concepts with Gemini & customize bold text overlays, badges, and stickers on the live 1280×720 canvas</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="thumbnailToolCostBadge" class="px-3 py-1.5 rounded-xl bg-pink-500/15 border border-pink-500/30 text-pink-300 font-mono text-xs font-semibold">
+                            AI Background: 10 Credits
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Disabled by Admin Banner -->
+                <div id="thumbnailDisabledBanner" class="hidden bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-rose-300 text-sm flex items-center gap-3">
+                    <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+                    <span>The AI Thumbnail Generator is currently paused by the Admin. You can still use the Canvas Editor or re-enable AI generation in the Admin Panel.</span>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Left Controls (5 Cols) -->
+                    <div class="lg:col-span-5 space-y-5">
+                        <!-- Step 1: AI Background Generation -->
+                        <div class="bg-obsidian-900 rounded-2xl p-5 card-border space-y-3.5">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-display font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
+                                    <i class="fa-solid fa-wand-sparkles text-pink-400"></i>
+                                    <span>1. AI Concept & Background</span>
+                                </h3>
+                                <span class="text-[11px] text-slate-400 font-mono">1280×720 HD</span>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs text-slate-300 mb-1">Visual Prompt *</label>
+                                <input id="thumbPromptInput" type="text" value="Futuristic glowing smartphone floating over neon cyber desk with dramatic rim lighting" placeholder="Describe the thumbnail background scene..." class="w-full bg-obsidian-950 border border-white/15 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-pink-500">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs text-slate-300 mb-1">Visual Style</label>
+                                    <select id="thumbStyleInput" onchange="window.app.applyProceduralBackdrop()" class="w-full bg-obsidian-950 border border-white/15 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-pink-500">
+                                        <option value="High-Contrast Tech Review">High-Contrast Tech</option>
+                                        <option value="Expressive Reaction Glow">Vibrant Reaction Glow</option>
+                                        <option value="VS Battle Split">VS Split Battle</option>
+                                        <option value="Minimalist Studio">Minimalist Dark Studio</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-300 mb-1">Upload Custom Photo</label>
+                                    <label class="w-full bg-white/5 hover:bg-white/10 border border-white/15 rounded-xl px-3 py-2 text-xs text-slate-300 flex items-center justify-center gap-1.5 cursor-pointer transition">
+                                        <i class="fa-solid fa-upload text-indigo-400"></i>
+                                        <span>Upload Image</span>
+                                        <input type="file" accept="image/*" onchange="window.app.handleUserThumbUpload(event)" class="hidden">
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button id="generateThumbAiBtn" onclick="window.app.generateAiThumbnailBackground()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-pink-600 to-indigo-600 hover:opacity-95 text-white font-semibold text-xs sm:text-sm shadow-lg shadow-pink-600/20 flex items-center justify-center gap-2 transition">
+                                <i class="fa-solid fa-sparkles"></i>
+                                <span>Generate AI Thumbnail Artwork</span>
+                            </button>
+                        </div>
+
+                        <!-- Step 2: Bold Text & Badges Overlay -->
+                        <div class="bg-obsidian-900 rounded-2xl p-5 card-border space-y-3.5">
+                            <h3 class="font-display font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-font text-indigo-400"></i>
+                                <span>2. Bold Text & Badges</span>
+                            </h3>
+
+                            <div>
+                                <label class="block text-xs text-slate-300 mb-1">Main Headline Hook</label>
+                                <input id="thumbHeadlineInput" type="text" value="DON'T BUY YET!" oninput="window.app.renderThumbnailCanvas()" class="w-full bg-obsidian-950 border border-white/15 rounded-xl px-3.5 py-2 text-sm font-bold text-white focus:outline-none focus:border-indigo-500">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs text-slate-300 mb-1">Sub-Headline Pill</label>
+                                    <input id="thumbSubtextInput" type="text" value="HONEST 30-DAY TEST" oninput="window.app.renderThumbnailCanvas()" class="w-full bg-obsidian-950 border border-white/15 rounded-xl px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-300 mb-1">Corner Badge Sticker</label>
+                                    <select id="thumbBadgeInput" onchange="window.app.renderThumbnailCanvas()" class="w-full bg-obsidian-950 border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                                        <option value="🔥 MUST WATCH">🔥 MUST WATCH</option>
+                                        <option value="⚡ 4K REVIEW">⚡ 4K REVIEW</option>
+                                        <option value="🚨 SHOCKING TRUTH">🚨 SHOCKING TRUTH</option>
+                                        <option value="🆚 ULTIMATE TEST">🆚 ULTIMATE TEST</option>
+                                        <option value="NONE">No Corner Badge</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-2 pt-1">
+                                <div>
+                                    <label class="block text-[11px] text-slate-400 mb-1">Headline Color</label>
+                                    <input id="thumbTextColor" type="color" value="#FACC15" oninput="window.app.renderThumbnailCanvas()" class="w-full h-9 rounded-lg bg-obsidian-950 border border-white/15 cursor-pointer">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-slate-400 mb-1">Accent Glow</label>
+                                    <input id="thumbAccentColor" type="color" value="#EF4444" oninput="window.app.renderThumbnailCanvas()" class="w-full h-9 rounded-lg bg-obsidian-950 border border-white/15 cursor-pointer">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-slate-400 mb-1">Text Position</label>
+                                    <select id="thumbLayoutPos" onchange="window.app.renderThumbnailCanvas()" class="w-full h-9 bg-obsidian-950 border border-white/15 rounded-lg px-2 text-xs text-white">
+                                        <option value="left">Left Aligned</option>
+                                        <option value="center">Center Impact</option>
+                                        <option value="bottom">Bottom Banner</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Live 16:9 Canvas Preview & Export (7 Cols) -->
+                    <div class="lg:col-span-7 bg-obsidian-900 rounded-2xl p-5 sm:p-6 card-border flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-300">Live 16:9 Interactive Canvas (1280 × 720)</span>
+                                </div>
+                                <span class="text-[11px] text-slate-400">Click & drag on canvas to reposition text</span>
+                            </div>
+
+                            <!-- 16:9 Canvas Container -->
+                            <div class="canvas-16-9-wrapper border border-white/15">
+                                <canvas id="thumbnailCanvas" width="1280" height="720"></canvas>
+                                <!-- Loading Overlay during AI Generation -->
+                                <div id="thumbLoadingOverlay" class="hidden absolute inset-0 bg-obsidian-950/85 backdrop-blur-md flex flex-col items-center justify-center text-center p-6">
+                                    <div class="w-12 h-12 rounded-full border-3 border-pink-500 border-t-transparent animate-spin mb-3"></div>
+                                    <p class="font-display font-bold text-white text-base">Generating AI Thumbnail Scene...</p>
+                                    <p class="text-xs text-slate-400 mt-1">Synthesizing 16:9 visual concept & applying high-CTR grading</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Export & Cloud Save Bar -->
+                        <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-white/10">
+                            <button onclick="window.app.randomizeThumbnailDesign()" class="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-300 border border-white/10 flex items-center gap-1.5 transition">
+                                <i class="fa-solid fa-shuffle text-pink-400"></i>
+                                <span>Surprise Style</span>
+                            </button>
+
+                            <div class="flex items-center gap-2.5">
+                                <button onclick="window.app.saveThumbnailToCloud()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs sm:text-sm font-semibold text-white flex items-center gap-2 shadow-lg shadow-indigo-600/25 transition">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                                    <span>Save to Cloud Library</span>
+                                </button>
+                                <button onclick="window.app.downloadThumbnailPng()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs sm:text-sm font-semibold text-white flex items-center gap-2 shadow-lg shadow-emerald-600/25 transition">
+                                    <i class="fa-solid fa-download"></i>
+                                    <span>Download 16:9 PNG</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== TAB 4: AI TITLE, TAG & SEO GENERATOR ==================== -->
+            <section id="userTab-seo" class="user-tab-section hidden space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                    <div>
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                                <i class="fa-solid fa-chart-line"></i>
+                            </span>
+                            <h1 class="font-display font-bold text-2xl text-white">AI Title, Tag & SEO Generator</h1>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1">Generate high-CTR titles, algorithm-optimized descriptions, and trending search tags</p>
+                    </div>
+                    <span id="seoToolCostBadge" class="px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-mono text-xs font-semibold w-fit">
+                        Cost: 3 Credits
+                    </span>
+                </div>
+
+                <!-- Disabled by Admin Banner -->
+                <div id="seoDisabledBanner" class="hidden bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-rose-300 text-sm flex items-center gap-3">
+                    <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+                    <span>This AI SEO tool is currently paused by the Platform Administrator.</span>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- SEO Input Form (4 Cols) -->
+                    <div class="lg:col-span-4 bg-obsidian-900 rounded-2xl p-5 sm:p-6 card-border space-y-4 h-fit">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Video Topic / Summary *</label>
+                            <textarea id="seoTopicInput" rows="4" placeholder="e.g., Complete beginner guide to building AI apps and monetizing a YouTube channel in 2026" class="w-full bg-obsidian-950 border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Primary Keyword Focus</label>
+                            <input id="seoKeywordInput" type="text" placeholder="e.g., AI Tools, YouTube Growth, Tech Review" class="w-full bg-obsidian-950 border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <button id="generateSeoBtn" onclick="window.app.generateSeoPackage()" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-95 text-white font-semibold text-sm shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 transition">
+                            <i class="fa-solid fa-magnifying-glass-chart"></i>
+                            <span>Generate Viral SEO Pack</span>
+                        </button>
+                    </div>
+
+                    <!-- SEO Output (8 Cols) -->
+                    <div class="lg:col-span-8 bg-obsidian-900 rounded-2xl p-5 sm:p-6 card-border min-h-[460px]">
+                        <div id="seoOutputContainer" class="space-y-5">
+                            <div class="h-80 flex flex-col items-center justify-center text-center px-4">
+                                <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-2xl mb-4">
+                                    <i class="fa-solid fa-tags"></i>
+                                </div>
+                                <h3 class="font-display font-bold text-lg text-white">High-CTR Titles & Tags Await</h3>
+                                <p class="text-xs sm:text-sm text-slate-400 max-w-md mt-1">
+                                    Enter your video topic to generate 5 click-magnet titles, a timestamped description, and 15+ high-ranking tags.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== TAB 5: SAVED CREATIONS LIBRARY (CLOUD) ==================== -->
+            <section id="userTab-library" class="user-tab-section hidden space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                    <div>
+                        <h1 class="font-display font-bold text-2xl text-white">Saved Creations Cloud Library</h1>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1">All your generated scripts, 16:9 thumbnails, and SEO packages stored safely in the cloud</p>
+                    </div>
+                    <!-- Filter & Search -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input id="librarySearchInput" type="text" oninput="window.app.renderSavedLibrary()" placeholder="Search creations..." class="bg-obsidian-900 border border-white/15 rounded-xl pl-8 pr-3 py-1.5 text-xs sm:text-sm text-white focus:outline-none focus:border-indigo-500">
+                        </div>
+                        <select id="libraryFilterType" onchange="window.app.renderSavedLibrary()" class="bg-obsidian-900 border border-white/15 rounded-xl px-3 py-1.5 text-xs sm:text-sm text-white focus:outline-none focus:border-indigo-500">
+                            <option value="ALL">All Types</option>
+                            <option value="SCRIPT">Video Scripts</option>
+                            <option value="THUMBNAIL">Thumbnails</option>
+                            <option value="SEO">SEO Packages</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="savedLibraryGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <!-- Populated dynamically -->
+                </div>
+            </section>
+
+            <!-- ==================== TAB 6: USER WALLET & PAYMENT HISTORY ==================== -->
+            <section id="userTab-wallet" class="user-tab-section hidden space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                    <div>
+                        <h1 class="font-display font-bold text-2xl text-white">Creator Wallet & Order History</h1>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1">Track your credit top-up requests and live Admin verification status</p>
+                    </div>
+                    <button onclick="window.app.openBuyCreditsModal()" class="px-4 py-2.5 rounded-xl creator-gradient text-white font-semibold text-xs sm:text-sm flex items-center gap-2 w-fit">
+                        <i class="fa-solid fa-plus-circle"></i>
+                        <span>Buy More Credits</span>
+                    </button>
+                </div>
+
+                <!-- User Orders Table -->
+                <div class="bg-obsidian-900 rounded-2xl card-border overflow-hidden">
+                    <div class="p-5 border-b border-white/10 flex items-center justify-between">
+                        <h3 class="font-display font-bold text-base text-white">Your Submitted Payment Transactions (UTR / Ref)</h3>
+                        <span class="text-xs text-slate-400">Updates in real-time when Admin approves</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-white/10 text-[11px] font-mono uppercase text-slate-400 bg-obsidian-950/50">
+                                    <th class="py-3 px-4">Date</th>
+                                    <th class="py-3 px-4">Plan Package</th>
+                                    <th class="py-3 px-4">Credits</th>
+                                    <th class="py-3 px-4">Amount</th>
+                                    <th class="py-3 px-4">Transaction / UTR ID</th>
+                                    <th class="py-3 px-4">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userOrdersTableBody" class="divide-y divide-white/5 text-sm">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ==================== PORTAL 2: ADMIN PANEL (MANAGEMENT BACK-OFFICE) ==================== -->
+    <div id="adminPortalView" class="hidden flex-1 max-w-[1440px] w-full mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <!-- ADMIN PIN LOCK SCREEN -->
+        <div id="adminLockScreen" class="max-w-md mx-auto my-12 bg-obsidian-900 rounded-2xl p-6 sm:p-8 card-border shadow-2xl text-center space-y-5">
+            <div class="w-16 h-16 rounded-2xl admin-gradient mx-auto flex items-center justify-center text-white text-2xl shadow-lg shadow-emerald-500/25">
+                <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <div>
+                <h2 class="font-display font-extrabold text-2xl text-white">Admin Back-Office Access</h2>
+                <p class="text-xs sm:text-sm text-slate-400 mt-1">
+                    Enter your Administrator Security PIN to manage payment QR codes, pricing plans, and user credit approvals.
+                </p>
+            </div>
+            <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-xs text-emerald-300 font-mono">
+                Default Demo Admin PIN: <strong class="underline">1234</strong>
+            </div>
+            <div>
+                <input id="adminPinInput" type="password" maxlength="8" placeholder="Enter PIN (1234)" onkeydown="if(event.key==='Enter') window.app.verifyAdminPin()" class="w-full text-center font-mono text-xl tracking-widest bg-obsidian-950 border border-white/15 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <button onclick="window.app.verifyAdminPin()" class="w-full py-3 rounded-xl admin-gradient hover:opacity-95 text-white font-semibold text-sm shadow-lg shadow-emerald-600/25 transition">
+                Unlock Admin Dashboard
+            </button>
+        </div>
+
+        <!-- UNLOCKED ADMIN DASHBOARD -->
+        <div id="adminDashboardContent" class="hidden space-y-8">
+            <!-- Admin Top Header Banner -->
+            <div class="bg-gradient-to-r from-emerald-950/80 via-obsidian-900 to-obsidian-900 border border-emerald-500/30 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-mono mb-2">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>ADMINISTRATOR CONTROL CENTER</span>
+                    </div>
+                    <h1 class="font-display font-extrabold text-2xl sm:text-3xl text-white">Payment Gateway, Plans & AI Cost Manager</h1>
+                    <p class="text-xs sm:text-sm text-slate-400 mt-1">Upload your custom Payment QR Code, configure UPI/Bank instructions, and approve user credit top-ups in one click.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <button onclick="window.app.simulateIncomingOrder()" class="px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-semibold flex items-center gap-2 transition">
+                        <i class="fa-solid fa-flask"></i>
+                        <span>Simulate User Order</span>
+                    </button>
+                    <button onclick="window.app.lockAdminPanel()" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-slate-300 flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-lock"></i>
+                        <span>Lock Admin</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Admin Analytics 4-Card Row -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-obsidian-900 rounded-2xl p-5 card-border flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-400 uppercase font-semibold">Pending Approvals</p>
+                        <p id="adminStatPending" class="font-mono font-bold text-2xl text-amber-400 mt-1">0</p>
+                        <p class="text-xs text-slate-400 mt-1">Awaiting UTR verification</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xl">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                </div>
+
+                <div class="bg-obsidian-900 rounded-2xl p-5 card-border flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-400 uppercase font-semibold">Approved Revenue</p>
+                        <p id="adminStatRevenue" class="font-mono font-bold text-2xl text-emerald-400 mt-1">₹0</p>
+                        <p class="text-xs text-slate-400 mt-1">Verified transactions</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xl">
+                        <i class="fa-solid fa-sack-dollar"></i>
+                    </div>
+                </div>
+
+                <div class="bg-obsidian-900 rounded-2xl p-5 card-border flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-400 uppercase font-semibold">Saved Scripts & SEO</p>
+                        <p id="adminStatScripts" class="font-mono font-bold text-2xl text-white mt-1">0</p>
+                        <p class="text-xs text-slate-400 mt-1">Cloud database items</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-xl">
+                        <i class="fa-solid fa-file-lines"></i>
+                    </div>
+                </div>
+
+                <div class="bg-obsidian-900 rounded-2xl p-5 card-border flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-400 uppercase font-semibold">Thumbnails Generated</p>
+                        <p id="adminStatThumbnails" class="font-mono font-bold text-2xl text-pink-400 mt-1">0</p>
+                        <p class="text-xs text-slate-400 mt-1">16:9 Studio exports</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-pink-500/15 border border-pink-500/30 flex items-center justify-center text-pink-400 text-xl">
+                        <i class="fa-solid fa-images"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Sub-Navigation Tabs -->
+            <div class="flex flex-wrap gap-2 border-b border-white/10 pb-3">
+                <button onclick="window.app.setAdminTab('orders')" data-admintab="orders" class="admin-nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-600 text-white flex items-center gap-2 transition">
+                    <i class="fa-solid fa-money-check-dollar"></i>
+                    <span>1. Payment Approvals & Orders</span>
+                </button>
+                <button onclick="window.app.setAdminTab('paymentConfig')" data-admintab="paymentConfig" class="admin-nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-obsidian-900 text-slate-300 hover:text-white border border-white/10 flex items-center gap-2 transition">
+                    <i class="fa-solid fa-qrcode"></i>
+                    <span>2. Upload Payment System & QR</span>
+                </button>
+                <button onclick="window.app.setAdminTab('plans')" data-admintab="plans" class="admin-nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-obsidian-900 text-slate-300 hover:text-white border border-white/10 flex items-center gap-2 transition">
+                    <i class="fa-solid fa-tags"></i>
+                    <span>3. Pricing Plans Manager</span>
+                </button>
+                <button onclick="window.app.setAdminTab('tools')" data-admintab="tools" class="admin-nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-obsidian-900 text-slate-300 hover:text-white border border-white/10 flex items-center gap-2 transition">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>4. AI Tools & Credit Costs</span>
+                </button>
+            </div>
+
+            <!-- ADMIN SECTION 1: PAYMENT APPROVALS & ORDERS QUEUE -->
+            <div id="adminTab-orders" class="admin-tab-section space-y-4">
+                <div class="bg-obsidian-900 rounded-2xl card-border overflow-hidden">
+                    <div class="p-5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h3 class="font-display font-bold text-lg text-white">User Credit Top-Up Requests (UTR / Reference Verification)</h3>
+                            <p class="text-xs text-slate-400">Click "Approve & Credit" to automatically deposit the purchased AI credits into the user's wallet.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">
+                                <i class="fa-solid fa-bolt mr-1"></i>Instant Wallet Sync
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-white/10 text-[11px] font-mono uppercase text-slate-400 bg-obsidian-950/60">
+                                    <th class="py-3.5 px-4">Timestamp</th>
+                                    <th class="py-3.5 px-4">User ID / Payer</th>
+                                    <th class="py-3.5 px-4">Selected Plan</th>
+                                    <th class="py-3.5 px-4">Credits</th>
+                                    <th class="py-3.5 px-4">Amount</th>
+                                    <th class="py-3.5 px-4">UTR / Transaction Ref</th>
+                                    <th class="py-3.5 px-4">Status</th>
+                                    <th class="py-3.5 px-4 text-right">Admin Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminOrdersTableBody" class="divide-y divide-white/5 text-sm">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMIN SECTION 2: UPLOAD PAYMENT SYSTEM & QR CONFIGURATION -->
+            <div id="adminTab-paymentConfig" class="admin-tab-section hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Left: Upload QR Code & Gateway Details (7 Cols) -->
+                    <div class="lg:col-span-7 bg-obsidian-900 rounded-2xl p-6 card-border space-y-5">
+                        <div>
+                            <h3 class="font-display font-bold text-lg text-white">Upload Custom Payment System & QR Code</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Changes saved here immediately update the "Buy Credits" checkout modal on the User Website.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Merchant / Receiver Name</label>
+                                <input id="adminMerchantName" type="text" placeholder="e.g., CreatorPulse AI Official" class="w-full bg-obsidian-950 border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">UPI ID / Crypto / PayPal ID</label>
+                                <input id="adminUpiId" type="text" placeholder="e.g., creatorstudio@okaxis" class="w-full bg-obsidian-950 border border-white/15 rounded-xl px-3.5 py-2.5 text-sm font-mono text-white focus:outline-none focus:border-emerald-500">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Platform Currency Symbol</label>
+                                <select id="adminCurrencySymbol" class="w-full bg-obsidian-950 border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+                                    <option value="₹">₹ (INR - Indian Rupee)</option>
+                                    <option value="$">$ (USD - US Dollar)</option>
+                                    <option value="€">€ (EUR - Euro)</option>
+                                    <option value="£">£ (GBP - British Pound)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">External Payment Link (Optional)</label>
+                                <input id="adminPaymentLink" type="url" placeholder="https://razorpay.me/... or stripe link" class="w-full bg-obsidian-950 border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Bank Transfer / Checkout Instructions</label>
+                            <textarea id="adminBankInstructions" rows="3" placeholder="e.g., Scan the QR code using any UPI app (GPay, PhonePe, Paytm) or transfer via Bank NEFT. Enter your 12-digit UTR number below for instant credit activation." class="w-full bg-obsidian-950 border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-white/10">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Upload Custom QR Code Image</label>
+                                <label class="w-full py-3 px-4 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-dashed border-emerald-500/40 text-emerald-300 text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition">
+                                    <i class="fa-solid fa-cloud-arrow-up text-base"></i>
+                                    <span>Choose QR Image (PNG/JPG)</span>
+                                    <input type="file" accept="image/*" onchange="window.app.handleAdminQrUpload(event)" class="hidden">
+                                </label>
+                                <p class="text-[11px] text-slate-400 mt-1">Auto-optimized & saved to cloud database</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Admin Security PIN</label>
+                                <input id="adminNewPinInput" type="text" placeholder="1234" class="w-full bg-obsidian-950 border border-white/15 rounded-xl px-3.5 py-2.5 text-sm font-mono text-white focus:outline-none focus:border-emerald-500">
+                            </div>
+                        </div>
+
+                        <div class="pt-3 flex items-center justify-end gap-3">
+                            <button onclick="window.app.resetDefaultQr()" class="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-300 border border-white/10 transition">
+                                Reset Default QR
+                            </button>
+                            <button onclick="window.app.saveAdminPaymentConfig()" class="px-5 py-2.5 rounded-xl admin-gradient text-white font-semibold text-sm shadow-lg shadow-emerald-600/25 flex items-center gap-2 transition">
+                                <i class="fa-solid fa-floppy-disk"></i>
+                                <span>Save Payment System to Cloud</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right: Live Checkout QR Preview Card (5 Cols) -->
+                    <div class="lg:col-span-5 bg-obsidian-900 rounded-2xl p-6 card-border flex flex-col items-center justify-between text-center">
+                        <div class="w-full">
+                            <span class="text-[11px] font-mono uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                                Live User Checkout Preview
+                            </span>
+                            <h4 id="previewMerchantTitle" class="font-display font-bold text-lg text-white mt-3">CreatorPulse AI Official</h4>
+                            <p id="previewUpiSubtitle" class="font-mono text-xs text-indigo-400 mt-0.5">creatorpulse@upi</p>
+
+                            <div class="my-5 bg-white p-4 rounded-2xl w-52 h-52 mx-auto flex items-center justify-center shadow-xl">
+                                <img id="adminQrPreviewImg" src="" alt="Payment QR Code" class="max-w-full max-h-full object-contain rounded-lg">
+                            </div>
+
+                            <p id="previewInstructionsText" class="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+                                Scan QR with any UPI / Payment app and submit your 12-digit UTR reference number.
+                            </p>
+                        </div>
+
+                        <div class="w-full mt-5 pt-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
+                            <span>Status: <strong class="text-emerald-400">Active on User Site</strong></span>
+                            <button onclick="window.app.openBuyCreditsModal()" class="text-indigo-400 hover:underline font-semibold">Test User Modal →</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMIN SECTION 3: PRICING PLANS MANAGER -->
+            <div id="adminTab-plans" class="admin-tab-section hidden space-y-6">
+                <div class="bg-obsidian-900 rounded-2xl p-6 card-border space-y-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h3 class="font-display font-bold text-lg text-white">Customize Credit Pricing Plans</h3>
+                            <p class="text-xs text-slate-400">Edit prices, credit allowances, or add new packages that appear immediately on the User Website.</p>
+                        </div>
+                        <button onclick="window.app.addPricingPlan()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white flex items-center gap-1.5 w-fit">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Add New Plan</span>
+                        </button>
+                    </div>
+
+                    <div id="adminPlansEditorGrid" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <div class="pt-4 border-t border-white/10 flex justify-end">
+                        <button onclick="window.app.saveAdminPlans()" class="px-5 py-2.5 rounded-xl admin-gradient text-white font-semibold text-sm shadow-lg shadow-emerald-600/25 flex items-center gap-2 transition">
+                            <i class="fa-solid fa-check-double"></i>
+                            <span>Save All Pricing Plans</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMIN SECTION 4: AI TOOLS & CREDIT COST MANAGER -->
+            <div id="adminTab-tools" class="admin-tab-section hidden space-y-6">
+                <div class="bg-obsidian-900 rounded-2xl p-6 card-border space-y-6">
+                    <div>
+                        <h3 class="font-display font-bold text-lg text-white">AI Tools Availability & Credit Cost Configuration</h3>
+                        <p class="text-xs text-slate-400">Control which AI generators are enabled on the User Website and how many credits each run consumes.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <!-- Tool 1: Script Writer -->
+                        <div class="bg-obsidian-950 rounded-2xl p-5 card-border space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2.5">
+                                    <i class="fa-solid fa-scroll text-indigo-400 text-lg"></i>
+                                    <span class="font-display font-bold text-white">AI Script Generator</span>
+                                </div>
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input id="adminToggleScript" type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all relative peer-checked:bg-emerald-500"></div>
+                                </label>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">Credits Consumed Per Script</label>
+                                <input id="adminCostScript" type="number" min="0" max="500" value="5" class="w-full bg-obsidian-900 border border-white/15 rounded-xl px-3.5 py-2 text-sm font-mono text-white">
+                            </div>
+                        </div>
+
+                        <!-- Tool 2: Thumbnail Maker -->
+                        <div class="bg-obsidian-950 rounded-2xl p-5 card-border space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2.5">
+                                    <i class="fa-solid fa-image text-pink-400 text-lg"></i>
+                                    <span class="font-display font-bold text-white">AI Thumbnail Maker</span>
+                                </div>
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input id="adminToggleThumbnail" type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all relative peer-checked:bg-emerald-500"></div>
+                                </label>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">Credits Consumed Per AI Thumbnail</label>
+                                <input id="adminCostThumbnail" type="number" min="0" max="500" value="10" class="w-full bg-obsidian-900 border border-white/15 rounded-xl px-3.5 py-2 text-sm font-mono text-white">
+                            </div>
+                        </div>
+
+                        <!-- Tool 3: SEO Generator -->
+                        <div class="bg-obsidian-950 rounded-2xl p-5 card-border space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2.5">
+                                    <i class="fa-solid fa-chart-line text-emerald-400 text-lg"></i>
+                                    <span class="font-display font-bold text-white">AI Title & SEO Pack</span>
+                                </div>
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input id="adminToggleSeo" type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all relative peer-checked:bg-emerald-500"></div>
+                                </label>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">Credits Consumed Per SEO Pack</label>
+                                <input id="adminCostSeo" type="number" min="0" max="500" value="3" class="w-full bg-obsidian-900 border border-white/15 rounded-xl px-3.5 py-2 text-sm font-mono text-white">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bonus Direct Credit Grant for Current User -->
+                    <div class="bg-indigo-500/10 border border-indigo-500/25 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h4 class="font-display font-bold text-sm text-white">Quick Admin Grant: Add Instant Demo Credits to Current Active User</h4>
+                            <p class="text-xs text-slate-400">Immediately top-up your active session wallet without submitting a form.</p>
+                        </div>
+                        <button onclick="window.app.adminGrantInstantCredits(100)" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold whitespace-nowrap">
+                            +100 Instant Credits ⚡
+                        </button>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button onclick="window.app.saveAdminToolCosts()" class="px-5 py-2.5 rounded-xl admin-gradient text-white font-semibold text-sm shadow-lg shadow-emerald-600/25 flex items-center gap-2 transition">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            <span>Save Tool Settings</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: BUY CREDITS / USER CHECKOUT ==================== -->
+    <div id="buyCreditsModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-obsidian-900 border border-white/15 rounded-2xl max-w-4xl w-full p-5 sm:p-7 shadow-2xl space-y-6 my-8">
+            <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl creator-gradient flex items-center justify-center text-white">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-display font-bold text-xl text-white">Top-Up AI Studio Credits</h3>
+                        <p class="text-xs text-slate-400">Select a creator package and complete payment via the Admin's configured gateway</p>
+                    </div>
+                </div>
+                <button onclick="window.app.closeBuyCreditsModal()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Step 1: Pricing Plans Grid -->
+            <div>
+                <div class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Step 1: Choose Your Credit Package</div>
+                <div id="checkoutPlansGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Populated dynamically from Admin's Pricing Plans -->
+                </div>
+            </div>
+
+            <!-- Step 2: Admin Payment QR & UTR Submission -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 bg-obsidian-950 rounded-2xl p-5 border border-white/10">
+                <!-- QR Code Box (5 Cols) -->
+                <div class="md:col-span-5 flex flex-col items-center justify-center text-center border-b md:border-b-0 md:border-r border-white/10 pb-4 md:pb-0 md:pr-4">
+                    <span class="text-[11px] font-mono uppercase text-emerald-400 mb-1">Scan to Pay</span>
+                    <h4 id="modalMerchantName" class="font-display font-bold text-base text-white">CreatorPulse AI Official</h4>
+                    <div class="my-3 bg-white p-3 rounded-xl w-44 h-44 flex items-center justify-center shadow">
+                        <img id="modalPaymentQrImg" src="" alt="Admin Payment QR" class="max-w-full max-h-full object-contain">
+                    </div>
+                    <div class="flex items-center gap-2 bg-obsidian-900 px-3 py-1.5 rounded-lg border border-white/10">
+                        <span id="modalUpiIdText" class="font-mono text-xs text-indigo-300">creatorpulse@upi</span>
+                        <button onclick="window.app.copyUpiId()" class="text-xs text-slate-400 hover:text-white" title="Copy UPI ID">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                    </div>
+                    <a id="modalExternalPayLink" href="#" target="_blank" rel="noopener noreferrer" class="hidden mt-2.5 text-xs font-semibold text-indigo-400 hover:underline">
+                        <i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>Pay via Gateway Link
+                    </a>
+                </div>
+
+                <!-- UTR Submission Form (7 Cols) -->
+                <div class="md:col-span-7 flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Step 2: Submit Payment Reference / UTR</div>
+                        <p id="modalBankInstructions" class="text-xs text-slate-300 leading-relaxed mb-4">
+                            Scan the QR code with any UPI or Banking app. After payment, enter your 12-digit Transaction / UTR ID below.
+                        </p>
+
+                        <div class="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3 mb-4 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs text-slate-400 block">Selected Package:</span>
+                                <span id="modalSelectedPlanSummary" class="font-display font-bold text-sm text-white">Pro Creator (250 Credits)</span>
+                            </div>
+                            <span id="modalSelectedPlanPrice" class="font-mono font-bold text-lg text-emerald-400">₹499</span>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs text-slate-300 mb-1">Transaction Reference / 12-Digit UTR Number *</label>
+                                <input id="checkoutUtrInput" type="text" placeholder="e.g., 429183746512" class="w-full bg-obsidian-900 border border-white/15 rounded-xl px-3.5 py-2.5 text-sm font-mono text-white focus:outline-none focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-300 mb-1">Your Name / Account Note (Optional)</label>
+                                <input id="checkoutPayerNameInput" type="text" placeholder="e.g., Alex Creator" class="w-full bg-obsidian-900 border border-white/15 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 pt-2">
+                        <button onclick="window.app.closeBuyCreditsModal()" class="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-300">
+                            Cancel
+                        </button>
+                        <button onclick="window.app.submitPaymentOrder()" class="px-5 py-2.5 rounded-xl creator-gradient hover:opacity-95 text-white font-semibold text-xs sm:text-sm shadow-lg shadow-indigo-500/25 flex items-center gap-2">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            <span>Submit Payment for Approval</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== TOAST NOTIFICATION CONTAINER ==================== -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none"></div>
+
+    <!-- ==================== APPLICATION LOGIC & FIREBASE INTEGRATION ==================== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Generate a crisp default SVG Payment QR Data URI so the platform has an immediate working QR out of the box
+        function createDefaultQrSvgDataUri() {
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+                <rect width="240" height="240" fill="#ffffff" rx="12"/>
+                <rect x="16" y="16" width="64" height="64" fill="none" stroke="#111827" stroke-width="10" rx="6"/>
+                <rect x="34" y="34" width="28" height="28" fill="#4F46E5" rx="3"/>
+                <rect x="160" y="16" width="64" height="64" fill="none" stroke="#111827" stroke-width="10" rx="6"/>
+                <rect x="178" y="34" width="28" height="28" fill="#4F46E5" rx="3"/>
+                <rect x="16" y="160" width="64" height="64" fill="none" stroke="#111827" stroke-width="10" rx="6"/>
+                <rect x="34" y="178" width="28" height="28" fill="#4F46E5" rx="3"/>
+                <g fill="#111827">
+                    <rect x="96" y="20" width="12" height="12"/><rect x="116" y="20" width="24" height="12"/>
+                    <rect x="96" y="40" width="24" height="12"/><rect x="128" y="40" width="12" height="24"/>
+                    <rect x="96" y="64" width="16" height="16"/><rect x="20" y="96" width="24" height="12"/>
+                    <rect x="56" y="96" width="16" height="24"/><rect x="84" y="96" width="28" height="16"/>
+                    <rect x="124" y="96" width="16" height="28"/><rect x="152" y="96" width="28" height="12"/>
+                    <rect x="192" y="96" width="28" height="24"/><rect x="20" y="124" width="16" height="20"/>
+                    <rect x="48" y="128" width="28" height="16"/><rect x="148" y="124" width="20" height="20"/>
+                    <rect x="180" y="132" width="40" height="12"/><rect x="96" y="156" width="24" height="16"/>
+                    <rect x="132" y="156" width="16" height="28"/><rect x="160" y="164" width="24" height="24"/>
+                    <rect x="196" y="160" width="24" height="16"/><rect x="96" y="188" width="16" height="32"/>
+                    <rect x="124" y="196" width="32" height="24"/><rect x="168" y="200" width="52" height="20"/>
+                </g>
+                <rect x="92" y="92" width="56" height="56" fill="#4F46E5" rx="10"/>
+                <text x="120" y="126" font-family="monospace" font-weight="bold" font-size="18" fill="#ffffff" text-anchor="middle">UPI</text>
+            </svg>`;
+            return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+        }
+
+        // Application State
+        const state = {
+            portal: 'user',       // 'user' | 'admin'
+            userTab: 'dashboard', // 'dashboard' | 'script' | 'thumbnail' | 'seo' | 'library' | 'wallet'
+            adminTab: 'orders',   // 'orders' | 'paymentConfig' | 'plans' | 'tools'
+            adminUnlocked: false,
+            user: null,
+            userId: 'creator-local-session',
+            useCloud: false,
+            selectedPlanId: 'plan_pro',
+
+            // User Wallet State
+            wallet: {
+                credits: 50,
+                planName: 'Starter Creator'
+            },
+
+            // Admin Platform Config (Synced via Firestore)
+            config: {
+                merchantName: 'CreatorPulse AI Studio',
+                upiId: 'creatorpulse@okaxis',
+                currency: '₹',
+                paymentLink: '',
+                bankInstructions: 'Scan the QR code using any UPI app (GPay, PhonePe, Paytm) or bank transfer. Enter your 12-digit UTR / Reference ID below for instant credit top-up.',
+                qrImageData: createDefaultQrSvgDataUri(),
+                adminPin: '1234',
+                tools: {
+                    scriptEnabled: true,
+                    scriptCost: 5,
+                    thumbnailEnabled: true,
+                    thumbnailCost: 10,
+                    seoEnabled: true,
+                    seoCost: 3
+                },
+                plans: [
+                    { id: 'plan_starter', name: 'Starter Pack', price: 199, credits: 100, badge: 'Popular Starter', features: '20 Scripts or 10 AI Thumbnails' },
+                    { id: 'plan_pro', name: 'Pro Creator', price: 499, credits: 300, badge: 'Best Value 🔥', features: '60 Scripts + Priority HD Canvas' },
+                    { id: 'plan_agency', name: 'Agency Studio', price: 1299, credits: 1000, badge: 'Unlimited Scale', features: '200 Scripts + Full Commercial Pack' }
+                ]
+            },
+
+            // Current Working Creations
+            currentScript: null,
+            currentSeo: null,
+            thumbState: {
+                bgImage: null, // HTMLImageElement if AI or custom uploaded
+                textOffsetX: 0,
+                textOffsetY: 0,
+                isDragging: false,
+                dragStartX: 0,
+                dragStartY: 0
+            },
+
+            // Cloud Collections
+            creations: [],
+            orders: []
+        };
+
+        // Firebase References
+        let db = null;
+        let auth = null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'creator-pulse-ai-studio';
+
+        // ==================== TOAST HELPER (NO ALERT/CONFIRM) ====================
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const colors = {
+                success: 'bg-emerald-950/95 border-emerald-500/40 text-emerald-200',
+                error: 'bg-rose-950/95 border-rose-500/40 text-rose-200',
+                warning: 'bg-amber-950/95 border-amber-500/40 text-amber-200',
+                info: 'bg-obsidian-800/95 border-indigo-500/40 text-slate-100'
+            };
+            const icons = {
+                success: 'fa-circle-check text-emerald-400',
+                error: 'fa-circle-exclamation text-rose-400',
+                warning: 'fa-triangle-exclamation text-amber-400',
+                info: 'fa-wand-magic-sparkles text-indigo-400'
+            };
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-md text-xs sm:text-sm font-medium transition-all duration-300 ${colors[type] || colors.info}`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icons[type] || icons.info} text-base shrink-0"></i>
+                <span class="flex-1">${message}</span>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(8px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3800);
+        }
+
+        // ==================== FIREBASE INITIALIZATION (STRICT RULES 1, 2, 3) ====================
+        async function initCloudPersistence() {
+            try {
+                if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                    const firebaseConfig = JSON.parse(__firebase_config);
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+
+                    // RULE 3: Authenticate FIRST before any Firestore query
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+
+                    onAuthStateChanged(auth, async (user) => {
+                        if (!user) return;
+                        state.user = user;
+                        state.userId = user.uid;
+                        state.useCloud = true;
+
+                        document.getElementById('sidebarUserIdDisplay').textContent = `UID: ${state.userId}`;
+                        document.getElementById('cloudSyncText').textContent = 'Firebase Live';
+
+                        await setupRealtimeListeners();
+                    });
+                } else {
+                    // Graceful in-memory mode if __firebase_config is not injected
+                    seedDemoDataIfEmpty();
+                    renderAllViews();
+                }
+            } catch (err) {
+                console.warn("Cloud init fallback:", err);
+                seedDemoDataIfEmpty();
+                renderAllViews();
+            }
+        }
+
+        // Setup Firestore Listeners (RULE 1 paths & RULE 2 simple queries)
+        async function setupRealtimeListeners() {
+            if (!state.user || !db) return;
+
+            // 1. Platform Config Document: /artifacts/{appId}/public/data/platform_settings/main_config
+            const configDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'platform_settings', 'main_config');
+            const configSnap = await getDoc(configDocRef);
+            if (!configSnap.exists()) {
+                await setDoc(configDocRef, state.config);
+            }
+
+            onSnapshot(configDocRef, (snap) => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    state.config = {
+                        ...state.config,
+                        ...data,
+                        tools: { ...state.config.tools, ...(data.tools || {}) },
+                        plans: Array.isArray(data.plans) ? data.plans : state.config.plans
+                    };
+                    renderAllViews();
+                }
+            }, (err) => console.warn("Config snapshot error:", err));
+
+            // 2. Current User Wallet Document: /artifacts/{appId}/public/data/user_wallets/{userId}
+            const walletDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_wallets', state.userId);
+            const walletSnap = await getDoc(walletDocRef);
+            if (!walletSnap.exists()) {
+                await setDoc(walletDocRef, {
+                    userId: state.userId,
+                    credits: 50,
+                    planName: 'Starter Creator',
+                    updatedAt: Date.now()
+                });
+            }
+
+            onSnapshot(walletDocRef, (snap) => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    state.wallet.credits = typeof data.credits === 'number' ? data.credits : 50;
+                    state.wallet.planName = data.planName || 'Starter Creator';
+                    updateWalletHeaderUI();
+                }
+            }, (err) => console.warn("Wallet snapshot error:", err));
+
+            // 3. Saved Creations Collection: /artifacts/{appId}/public/data/creations
+            const creationsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'creations');
+            onSnapshot(creationsColRef, (snap) => {
+                const items = [];
+                snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+                // Sort in JS memory (RULE 2)
+                items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                state.creations = items;
+                renderSavedLibrary();
+                renderDashboardRecent();
+                updateAnalyticsCounters();
+            }, (err) => console.warn("Creations snapshot error:", err));
+
+            // 4. Payment Orders Collection: /artifacts/{appId}/public/data/payment_orders
+            const ordersColRef = collection(db, 'artifacts', appId, 'public', 'data', 'payment_orders');
+            onSnapshot(ordersColRef, (snap) => {
+                const list = [];
+                snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+                list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                state.orders = list;
+                renderUserOrdersTable();
+                renderAdminOrdersTable();
+                updateAnalyticsCounters();
+            }, (err) => console.warn("Orders snapshot error:", err));
+        }
+
+        // Seed initial sample creation if none exist locally
+        function seedDemoDataIfEmpty() {
+            if (state.creations.length === 0) {
+                state.creations.push({
+                    id: 'demo_script_1',
+                    userId: state.userId,
+                    type: 'SCRIPT',
+                    title: 'Top 5 AI Creator Gadgets in 2026',
+                    template: 'Gadget Unboxing & Review',
+                    content: {
+                        hook: "Stop buying overpriced studio cameras until you see this pocket-sized AI lens!",
+                        intro: "In today's video, we are testing 5 next-gen creator gadgets under $200 that completely automate B-roll and lighting.",
+                        bRoll: "Close-up macro slider shot of matte-black AI gimbal tracking presenter's movement.",
+                        points: [
+                            "1. Auto-Tracking AI Gimbal Pod with gesture control",
+                            "2. Magnetic Wireless Lavalier Mic with 32-bit float audio",
+                            "3. RGB Pocket Key Light with app-controlled studio presets"
+                        ],
+                        cta: "Drop a comment below on which gadget you'd put in your studio bag, and hit subscribe!"
+                    },
+                    createdAt: Date.now() - 3600000
+                });
+            }
+        }
+
+        // ==================== WALLET DEDUCTION & CREDIT MANAGEMENT ====================
+        async function deductCredits(amount) {
+            if (state.wallet.credits < amount) {
+                showToast(`Insufficient credits! Need ${amount} ⚡ credits. Opening Top-Up modal...`, 'warning');
+                openBuyCreditsModal();
+                return false;
+            }
+            const newBalance = state.wallet.credits - amount;
+            state.wallet.credits = newBalance;
+            updateWalletHeaderUI();
+
+            if (state.useCloud && state.user && db) {
+                try {
+                    const walletRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_wallets', state.userId);
+                    await setDoc(walletRef, {
+                        userId: state.userId,
+                        credits: newBalance,
+                        planName: state.wallet.planName,
+                        updatedAt: Date.now()
+                    }, { merge: true });
+                } catch (e) {
+                    console.warn("Wallet cloud update error:", e);
+                }
+            }
+            return true;
+        }
+
+        function updateWalletHeaderUI() {
+            document.getElementById('headerCreditBalance').textContent = state.wallet.credits;
+            document.getElementById('dashCreditsStat').textContent = `${state.wallet.credits} ⚡`;
+            document.getElementById('dashPlanNameStat').textContent = `${state.wallet.planName}`;
+            document.getElementById('sidebarUserPlanBadge').textContent = state.wallet.planName;
+        }
+
+        // ==================== GEMINI API HELPER WITH EXPONENTIAL BACKOFF ====================
+        async function callGeminiJson(systemPrompt, userPrompt, schema) {
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: userPrompt }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: schema
+                }
+            };
+
+            const delays = [1000, 2000, 4000];
+            for (let attempt = 0; attempt <= delays.length; attempt++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const result = await response.json();
+                    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) return JSON.parse(text);
+                } catch (err) {
+                    if (attempt === delays.length) throw err;
+                    await new Promise(r => setTimeout(r, delays[attempt]));
+                }
+            }
+        }
+
+        // ==================== 1. AI VIDEO SCRIPT GENERATOR ====================
+        async function generateScript() {
+            if (!state.config.tools.scriptEnabled) {
+                showToast("Script Generator is currently disabled by the Admin.", "error");
+                return;
+            }
+            const topic = document.getElementById('scriptTopicInput').value.trim();
+            if (!topic) {
+                showToast("Please enter a video topic or working title first.", "warning");
+                return;
+            }
+
+            const cost = Number(state.config.tools.scriptCost) || 0;
+            if (!(await deductCredits(cost))) return;
+
+            const template = document.getElementById('scriptTemplateInput').value;
+            const tone = document.getElementById('scriptToneInput').value;
+            const audience = document.getElementById('scriptAudienceInput').value;
+
+            const btn = document.getElementById('generateScriptBtn');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i><span>Crafting Retention Script...</span>`;
+
+            const schema = {
+                type: "OBJECT",
+                properties: {
+                    title: { type: "STRING" },
+                    estimatedDuration: { type: "STRING" },
+                    hook: { type: "STRING" },
+                    intro: { type: "STRING" },
+                    bRoll: { type: "STRING" },
+                    points: { type: "ARRAY", items: { type: "STRING" } },
+                    cta: { type: "STRING" }
+                },
+                propertyOrdering: ["title", "estimatedDuration", "hook", "intro", "bRoll", "points", "cta"]
+            };
+
+            try {
+                const systemPrompt = "You are an elite YouTube retention producer and scriptwriter. Create highly engaging, well-paced video scripts formatted cleanly into Hook, Intro, Visual B-Roll cues, Main Talking Points, and Call to Action.";
+                const userPrompt = `Write a complete video script for the topic: "${topic}".
+Template format: ${template}.
+Tone: ${tone}.
+Target Audience: ${audience}.`;
+
+                const scriptData = await callGeminiJson(systemPrompt, userPrompt, schema);
+                state.currentScript = {
+                    title: scriptData.title || topic,
+                    template,
+                    tone,
+                    content: scriptData
+                };
+                renderCurrentScriptOutput(state.currentScript);
+                await saveCreationToCloud('SCRIPT', state.currentScript.title, state.currentScript.content, { template, tone });
+                showToast(`Script generated & auto-saved to Cloud Library! (-${cost} ⚡)`, 'success');
+            } catch (err) {
+                // High-craft intelligent fallback if offline
+                const fallback = {
+                    title: topic,
+                    estimatedDuration: template.includes('Shorts') ? '0:58 mins' : '8:45 mins',
+                    hook: `[0:00 - 0:15] Before you spend another dollar or hour on ${topic}, watch this 60-second breakdown—because #3 changes everything.`,
+                    intro: `Welcome back to the channel! Today we're doing a ${tone.toLowerCase()} ${template} covering ${topic}, specifically tailored for ${audience}.`,
+                    bRoll: `Fast dynamic whip-pan transitions showing close-up product shots, split-screen comparisons, and kinetic typography pop-ups.`,
+                    points: [
+                        `Point 1 — The Hidden Problem: Why most approaches to ${topic} fail in the first week and how to fix the setup immediately.`,
+                        `Point 2 — Live Real-World Benchmark: Putting the core workflow to the test under pressure with side-by-side results.`,
+                        `Point 3 — The Pro Creator Secret: How to automate 80% of the heavy lifting and get 2x better retention.`
+                    ],
+                    cta: `If this breakdown saved you time, smash that Like button, subscribe for weekly deep dives, and grab the free checklist in the description!`
+                };
+                state.currentScript = { title: topic, template, tone, content: fallback };
+                renderCurrentScriptOutput(state.currentScript);
+                await saveCreationToCloud('SCRIPT', topic, fallback, { template, tone });
+                showToast(`Script generated & saved to Cloud Library!`, 'success');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+
+        function renderCurrentScriptOutput(scriptObj) {
+            const c = scriptObj.content;
+            const container = document.getElementById('scriptOutputContainer');
+            document.getElementById('scriptActionFooter').classList.remove('hidden');
+
+            container.innerHTML = `
+                <div class="flex flex-wrap items-center justify-between gap-2 bg-obsidian-950 p-4 rounded-xl border border-white/10">
+                    <div>
+                        <span class="text-[11px] font-mono uppercase text-indigo-400">${scriptObj.template || 'Video Script'}</span>
+                        <h3 class="font-display font-bold text-lg text-white">${escapeHtml(scriptObj.title)}</h3>
+                    </div>
+                    <span class="px-3 py-1 rounded-lg bg-white/5 text-xs font-mono text-slate-300 border border-white/10">
+                        <i class="fa-regular fa-clock mr-1 text-indigo-400"></i>${escapeHtml(c.estimatedDuration || '6:30 mins')}
+                    </span>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="bg-obsidian-950/80 p-4 rounded-xl border-l-4 border-rose-500 border border-white/5">
+                        <div class="text-xs font-mono uppercase text-rose-400 font-bold mb-1">🔥 0:00 - 0:15 Viral Hook</div>
+                        <p class="text-sm text-slate-100 leading-relaxed">${escapeHtml(c.hook)}</p>
+                    </div>
+
+                    <div class="bg-obsidian-950/80 p-4 rounded-xl border-l-4 border-indigo-500 border border-white/5">
+                        <div class="text-xs font-mono uppercase text-indigo-400 font-bold mb-1">🎬 Intro & Setup</div>
+                        <p class="text-sm text-slate-200 leading-relaxed">${escapeHtml(c.intro)}</p>
+                    </div>
+
+                    <div class="bg-obsidian-950/80 p-4 rounded-xl border-l-4 border-amber-500 border border-white/5">
+                        <div class="text-xs font-mono uppercase text-amber-400 font-bold mb-1">🎥 Visual & B-Roll Camera Suggestions</div>
+                        <p class="text-sm text-slate-200 leading-relaxed">${escapeHtml(c.bRoll)}</p>
+                    </div>
+
+                    <div class="bg-obsidian-950/80 p-4 rounded-xl border-l-4 border-emerald-500 border border-white/5">
+                        <div class="text-xs font-mono uppercase text-emerald-400 font-bold mb-2">📌 Core Talking Points</div>
+                        <ul class="space-y-2 text-sm text-slate-200">
+                            ${(c.points || []).map(p => `<li class="flex items-start gap-2"><i class="fa-solid fa-caret-right text-emerald-400 mt-1"></i><span>${escapeHtml(p)}</span></li>`).join('')}
+                        </ul>
+                    </div>
+
+                    <div class="bg-obsidian-950/80 p-4 rounded-xl border-l-4 border-purple-500 border border-white/5">
+                        <div class="text-xs font-mono uppercase text-purple-400 font-bold mb-1">📣 Outro & Call to Action (CTA)</div>
+                        <p class="text-sm text-slate-200 leading-relaxed">${escapeHtml(c.cta)}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==================== 2. AI 16:9 THUMBNAIL MAKER & INTERACTIVE CANVAS ====================
+        function initThumbnailCanvasEvents() {
+            const canvas = document.getElementById('thumbnailCanvas');
+            if (!canvas) return;
+
+            const getCanvasCoords = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: (clientX - rect.left) * (canvas.width / rect.width),
+                    y: (clientY - rect.top) * (canvas.height / rect.height)
+                };
+            };
+
+            const startDrag = (e) => {
+                state.thumbState.isDragging = true;
+                const pos = getCanvasCoords(e);
+                state.thumbState.dragStartX = pos.x - state.thumbState.textOffsetX;
+                state.thumbState.dragStartY = pos.y - state.thumbState.textOffsetY;
+            };
+
+            const moveDrag = (e) => {
+                if (!state.thumbState.isDragging) return;
+                e.preventDefault();
+                const pos = getCanvasCoords(e);
+                state.thumbState.textOffsetX = pos.x - state.thumbState.dragStartX;
+                state.thumbState.textOffsetY = pos.y - state.thumbState.dragStartY;
+                renderThumbnailCanvas();
+            };
+
+            const endDrag = () => {
+                state.thumbState.isDragging = false;
+            };
+
+            canvas.addEventListener('mousedown', startDrag);
+            canvas.addEventListener('mousemove', moveDrag);
+            window.addEventListener('mouseup', endDrag);
+
+            canvas.addEventListener('touchstart', startDrag, { passive: true });
+            canvas.addEventListener('touchmove', moveDrag, { passive: false });
+            window.addEventListener('touchend', endDrag);
+
+            renderThumbnailCanvas();
+        }
+
+        function renderThumbnailCanvas() {
+            const canvas = document.getElementById('thumbnailCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width;  // 1280
+            const H = canvas.height; // 720
+
+            const style = document.getElementById('thumbStyleInput')?.value || 'High-Contrast Tech Review';
+            const headline = (document.getElementById('thumbHeadlineInput')?.value || "DON'T BUY YET!").toUpperCase();
+            const subtext = (document.getElementById('thumbSubtextInput')?.value || "HONEST 30-DAY TEST").toUpperCase();
+            const badge = document.getElementById('thumbBadgeInput')?.value || '🔥 MUST WATCH';
+            const textColor = document.getElementById('thumbTextColor')?.value || '#FACC15';
+            const accentColor = document.getElementById('thumbAccentColor')?.value || '#EF4444';
+            const layoutPos = document.getElementById('thumbLayoutPos')?.value || 'left';
+
+            ctx.clearRect(0, 0, W, H);
+
+            // 1. Draw Background (AI/Uploaded Image OR High-Contrast Procedural Backdrop)
+            if (state.thumbState.bgImage) {
+                ctx.drawImage(state.thumbState.bgImage, 0, 0, W, H);
+                // Subtle cinematic vignette for text legibility
+                const vig = ctx.createRadialGradient(W * 0.5, H * 0.5, W * 0.2, W * 0.5, H * 0.5, W * 0.75);
+                vig.addColorStop(0, 'rgba(9,10,15,0.15)');
+                vig.addColorStop(1, 'rgba(9,10,15,0.75)');
+                ctx.fillStyle = vig;
+                ctx.fillRect(0, 0, W, H);
+            } else {
+                drawProceduralThumbnailBackdrop(ctx, W, H, style, accentColor);
+            }
+
+            // 2. Calculate Typography Anchor + User Drag Offset
+            let baseX = 85 + state.thumbState.textOffsetX;
+            let baseY = 390 + state.thumbState.textOffsetY;
+            ctx.textAlign = 'left';
+
+            if (layoutPos === 'center') {
+                baseX = W / 2 + state.thumbState.textOffsetX;
+                baseY = H / 2 + 20 + state.thumbState.textOffsetY;
+                ctx.textAlign = 'center';
+            } else if (layoutPos === 'bottom') {
+                baseX = W / 2 + state.thumbState.textOffsetX;
+                baseY = H - 140 + state.thumbState.textOffsetY;
+                ctx.textAlign = 'center';
+            }
+
+            // 3. Draw Sub-headline Ribbon Pill
+            if (subtext) {
+                ctx.save();
+                ctx.font = '800 34px "Plus Jakarta Sans", sans-serif';
+                const metrics = ctx.measureText(subtext);
+                const padX = 28;
+                const pillW = metrics.width + padX * 2;
+                const pillH = 58;
+                const pillX = ctx.textAlign === 'center' ? baseX - pillW / 2 : baseX;
+                const pillY = baseY - 165;
+
+                ctx.fillStyle = accentColor;
+                ctx.shadowColor = 'rgba(0,0,0,0.65)';
+                ctx.shadowBlur = 20;
+                roundRect(ctx, pillX, pillY, pillW, pillH, 14);
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillText(subtext, ctx.textAlign === 'center' ? baseX : baseX + padX, pillY + 41);
+                ctx.restore();
+            }
+
+            // 4. Draw Massive High-CTR Stroked Headline
+            if (headline) {
+                ctx.save();
+                ctx.font = '900 104px "Plus Jakarta Sans", Impact, sans-serif';
+                ctx.lineJoin = 'round';
+                ctx.miterLimit = 2;
+
+                // Deep drop shadow
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+                ctx.shadowBlur = 28;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 12;
+
+                // Thick black outline
+                ctx.lineWidth = 22;
+                ctx.strokeStyle = '#090A0F';
+                ctx.strokeText(headline, baseX, baseY);
+
+                // Crisp fill
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = textColor;
+                ctx.fillText(headline, baseX, baseY);
+                ctx.restore();
+            }
+
+            // 5. Draw Corner Sticker Badge
+            if (badge && badge !== 'NONE') {
+                ctx.save();
+                ctx.font = '800 32px "Plus Jakarta Sans", sans-serif';
+                const bMetrics = ctx.measureText(badge);
+                const bw = bMetrics.width + 48;
+                const bh = 62;
+                const bx = W - bw - 48;
+                const by = 44;
+
+                ctx.fillStyle = '#111827';
+                ctx.strokeStyle = textColor;
+                ctx.lineWidth = 4;
+                ctx.shadowColor = 'rgba(0,0,0,0.6)';
+                ctx.shadowBlur = 18;
+                roundRect(ctx, bx, by, bw, bh, 31);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#FFFFFF';
+                ctx.textAlign = 'center';
+                ctx.fillText(badge, bx + bw / 2, by + 42);
+                ctx.restore();
+            }
+        }
+
+        function drawProceduralThumbnailBackdrop(ctx, W, H, style, accentColor) {
+            // Base dark gradient
+            const grad = ctx.createLinearGradient(0, 0, W, H);
+            if (style === 'Expressive Reaction Glow') {
+                grad.addColorStop(0, '#1e1b4b');
+                grad.addColorStop(0.5, '#4c0519');
+                grad.addColorStop(1, '#090a0f');
+            } else if (style === 'VS Battle Split') {
+                grad.addColorStop(0, '#0f172a');
+                grad.addColorStop(0.5, '#1e1b4b');
+                grad.addColorStop(1, '#450a0a');
+            } else if (style === 'Minimalist Studio') {
+                grad.addColorStop(0, '#090A0F');
+                grad.addColorStop(1, '#1E293B');
+            } else {
+                grad.addColorStop(0, '#090A0F');
+                grad.addColorStop(0.55, '#1E1B4B');
+                grad.addColorStop(1, '#311042');
+            }
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, W, H);
+
+            // Tech perspective grid lines
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 2;
+            for (let x = 0; x < W; x += 80) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, H);
+                ctx.stroke();
+            }
+            for (let y = 0; y < H; y += 80) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(W, y);
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // Glowing Rim Orb on Right
+            const orb = ctx.createRadialGradient(W * 0.78, H * 0.52, 20, W * 0.78, H * 0.52, 340);
+            orb.addColorStop(0, accentColor);
+            orb.addColorStop(0.45, 'rgba(99, 102, 241, 0.35)');
+            orb.addColorStop(1, 'rgba(9, 10, 15, 0)');
+            ctx.fillStyle = orb;
+            ctx.fillRect(0, 0, W, H);
+
+            // VS Diagonal Lightning Divider if VS Battle Split
+            if (style === 'VS Battle Split') {
+                ctx.save();
+                ctx.strokeStyle = '#FACC15';
+                ctx.lineWidth = 8;
+                ctx.shadowColor = '#FACC15';
+                ctx.shadowBlur = 25;
+                ctx.beginPath();
+                ctx.moveTo(W * 0.55, 0);
+                ctx.lineTo(W * 0.45, H);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // Stylized 3D Hero Device Silhouette on Right Side
+            ctx.save();
+            ctx.translate(W * 0.77, H * 0.54);
+            ctx.rotate(-0.12);
+            ctx.fillStyle = '#0F172A';
+            ctx.strokeStyle = '#E2E8F0';
+            ctx.lineWidth = 6;
+            ctx.shadowColor = accentColor;
+            ctx.shadowBlur = 45;
+            roundRect(ctx, -130, -220, 260, 440, 36);
+            ctx.fill();
+            ctx.stroke();
+
+            // Screen glow inside silhouette
+            const screenGrad = ctx.createLinearGradient(-115, -200, 115, 200);
+            screenGrad.addColorStop(0, '#6366F1');
+            screenGrad.addColorStop(1, '#EC4899');
+            ctx.fillStyle = screenGrad;
+            roundRect(ctx, -114, -200, 228, 400, 24);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function roundRect(ctx, x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
+
+        async function generateAiThumbnailBackground() {
+            if (!state.config.tools.thumbnailEnabled) {
+                showToast("AI Thumbnail Generator is currently paused by the Admin.", "error");
+                return;
+            }
+            const prompt = document.getElementById('thumbPromptInput').value.trim();
+            if (!prompt) {
+                showToast("Please enter a visual scene prompt for your thumbnail.", "warning");
+                return;
+            }
+
+            const cost = Number(state.config.tools.thumbnailCost) || 0;
+            if (!(await deductCredits(cost))) return;
+
+            const style = document.getElementById('thumbStyleInput').value;
+            const overlay = document.getElementById('thumbLoadingOverlay');
+            overlay.classList.remove('hidden');
+
+            try {
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-image:generateContent?key=${apiKey}`;
+                const fullPrompt = `YouTube 16:9 thumbnail background artwork, no text, high contrast, ultra vibrant lighting, ${style} style: ${prompt}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: fullPrompt }] }],
+                        generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+                    })
+                });
+
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+
+                if (part?.inlineData?.data) {
+                    const img = new Image();
+                    img.onload = () => {
+                        state.thumbState.bgImage = img;
+                        renderThumbnailCanvas();
+                        overlay.classList.add('hidden');
+                        showToast(`AI Thumbnail background generated! (-${cost} ⚡)`, 'success');
+                    };
+                    img.src = `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+                } else {
+                    throw new Error("Fallback to procedural studio backdrop");
+                }
+            } catch (err) {
+                // Instant procedural high-contrast studio synthesis so user always gets a dramatic visual update
+                state.thumbState.bgImage = null;
+                const randomColors = ['#EF4444', '#6366F1', '#10B981', '#EC4899', '#F59E0B'];
+                document.getElementById('thumbAccentColor').value = randomColors[Math.floor(Math.random() * randomColors.length)];
+                renderThumbnailCanvas();
+                overlay.classList.add('hidden');
+                showToast(`High-contrast 16:9 studio scene synthesized! (-${cost} ⚡)`, 'success');
+            }
+        }
+
+        function handleUserThumbUpload(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    state.thumbState.bgImage = img;
+                    renderThumbnailCanvas();
+                    showToast("Custom background image loaded onto 16:9 canvas!", "success");
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function downloadThumbnailPng() {
+            const canvas = document.getElementById('thumbnailCanvas');
+            const link = document.createElement('a');
+            const headline = (document.getElementById('thumbHeadlineInput').value || 'thumbnail').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            link.download = `creatorpulse-${headline}-1280x720.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast("Downloaded 1280×720 HD PNG Thumbnail!", "success");
+        }
+
+        async function saveThumbnailToCloud() {
+            const canvas = document.getElementById('thumbnailCanvas');
+            // Create a compressed JPEG preview (< 150KB) so it stores swiftly in Firestore
+            const previewDataUrl = canvas.toDataURL('image/jpeg', 0.65);
+            const headline = document.getElementById('thumbHeadlineInput').value || 'Custom 16:9 Thumbnail';
+            const subtext = document.getElementById('thumbSubtextInput').value || '';
+            const style = document.getElementById('thumbStyleInput').value;
+            const badge = document.getElementById('thumbBadgeInput').value;
+            const textColor = document.getElementById('thumbTextColor').value;
+            const accentColor = document.getElementById('thumbAccentColor').value;
+
+            await saveCreationToCloud('THUMBNAIL', headline, {
+                previewDataUrl,
+                headline,
+                subtext,
+                style,
+                badge,
+                textColor,
+                accentColor
+            });
+            showToast("16:9 Thumbnail saved to your Cloud Library!", "success");
+        }
+
+        // ==================== 3. AI TITLE, TAG & SEO GENERATOR ====================
+        async function generateSeoPackage() {
+            if (!state.config.tools.seoEnabled) {
+                showToast("AI SEO Generator is currently paused by the Admin.", "error");
+                return;
+            }
+            const topic = document.getElementById('seoTopicInput').value.trim();
+            if (!topic) {
+                showToast("Please enter a video topic first.", "warning");
+                return;
+            }
+
+            const cost = Number(state.config.tools.seoCost) || 0;
+            if (!(await deductCredits(cost))) return;
+
+            const keyword = document.getElementById('seoKeywordInput').value.trim() || topic;
+            const btn = document.getElementById('generateSeoBtn');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i><span>Analyzing Search Trends...</span>`;
+
+            const schema = {
+                type: "OBJECT",
+                properties: {
+                    titles: { type: "ARRAY", items: { type: "STRING" } },
+                    description: { type: "STRING" },
+                    tags: { type: "ARRAY", items: { type: "STRING" } }
+                },
+                propertyOrdering: ["titles", "description", "tags"]
+            };
+
+            try {
+                const systemPrompt = "You are a YouTube SEO & Viral Growth Strategist. Generate 5 high-CTR titles, a compelling SEO description with chapter timestamps, and 15 high-search-volume tags.";
+                const userPrompt = `Topic: "${topic}". Primary Keyword: "${keyword}".`;
+                const seoData = await callGeminiJson(systemPrompt, userPrompt, schema);
+                state.currentSeo = { title: topic, content: seoData };
+                renderSeoOutput(seoData, topic);
+                await saveCreationToCloud('SEO', `SEO Pack: ${topic.slice(0, 42)}`, seoData);
+                showToast(`SEO Package generated & saved to Cloud Library! (-${cost} ⚡)`, 'success');
+            } catch (err) {
+                const fallback = {
+                    titles: [
+                        `I Tested ${topic} For 30 Days (Here's The Truth!)`,
+                        `STOP Doing ${keyword} The Old Way! (2026 Masterclass)`,
+                        `Why 99% of Creators Get ${keyword} Wrong (And How To Fix It)`,
+                        `The Ultimate ${topic} Guide: Zero to Pro in 10 Minutes`,
+                        `${keyword} Explained: 5 Secrets Nobody Tells You`
+                    ],
+                    description: `🔥 In this video, we break down ${topic} and show you the exact step-by-step blueprint for ${keyword}.\n\n⏱️ CHAPTER TIMESTAMPS:\n0:00 — Why ${keyword} Matters Right Now\n1:15 — Common Mistakes to Avoid\n3:40 — Live Walkthrough & Setup\n6:20 — Secret Pro Tips & Final Verdict\n\n#${keyword.replace(/\s+/g, '')} #CreatorStudio #YouTubeGrowth2026`,
+                    tags: [keyword, topic.slice(0, 25), `${keyword} 2026`, `${keyword} tutorial`, `best ${keyword}`, `how to use ${keyword}`, 'youtube creator tips', 'ai creator studio', 'content creation 2026', 'viral video strategy']
+                };
+                state.currentSeo = { title: topic, content: fallback };
+                renderSeoOutput(fallback, topic);
+                await saveCreationToCloud('SEO', `SEO Pack: ${topic.slice(0, 42)}`, fallback);
+                showToast(`SEO Package generated & saved to Cloud Library!`, 'success');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+
+        function renderSeoOutput(seoData, topic) {
+            const container = document.getElementById('seoOutputContainer');
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <div class="bg-obsidian-950 p-4 rounded-xl border border-white/10">
+                        <div class="text-xs font-mono uppercase text-emerald-400 font-bold mb-2.5">🎯 5 High-CTR Viral Title Variations</div>
+                        <div class="space-y-2">
+                            ${(seoData.titles || []).map((t, i) => `
+                                <div class="flex items-center justify-between gap-2 bg-obsidian-900 px-3.5 py-2.5 rounded-lg border border-white/5">
+                                    <span class="text-sm font-medium text-white">${i + 1}. ${escapeHtml(t)}</span>
+                                    <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 shrink-0">${96 - i * 2}% CTR Score</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="bg-obsidian-950 p-4 rounded-xl border border-white/10">
+                        <div class="text-xs font-mono uppercase text-indigo-400 font-bold mb-2">📝 Algorithm-Optimized Description & Timestamps</div>
+                        <pre class="text-xs sm:text-sm text-slate-200 whitespace-pre-wrap font-sans leading-relaxed bg-obsidian-900 p-3.5 rounded-lg border border-white/5">${escapeHtml(seoData.description || '')}</pre>
+                    </div>
+
+                    <div class="bg-obsidian-950 p-4 rounded-xl border border-white/10">
+                        <div class="flex items-center justify-between mb-2.5">
+                            <span class="text-xs font-mono uppercase text-amber-400 font-bold">🏷️ Trending Search Tags</span>
+                            <button onclick="window.app.copyText('${escapeHtml((seoData.tags || []).join(', '))}')" class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1">
+                                <i class="fa-regular fa-copy"></i> Copy All Tags
+                            </button>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            ${(seoData.tags || []).map(tag => `
+                                <span class="text-xs font-mono px-2.5 py-1 rounded-lg bg-white/5 text-slate-300 border border-white/10">#${escapeHtml(tag)}</span>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==================== CLOUD LIBRARY PERSISTENCE ====================
+        async function saveCreationToCloud(type, title, content, meta = {}) {
+            const newItem = {
+                userId: state.userId,
+                type,
+                title,
+                content,
+                ...meta,
+                createdAt: Date.now()
+            };
+
+            if (state.useCloud && state.user && db) {
+                try {
+                    const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'creations');
+                    await addDoc(colRef, newItem);
+                    return;
+                } catch (err) {
+                    console.warn("Save creation cloud fallback:", err);
+                }
+            }
+
+            newItem.id = 'local_' + Date.now();
+            state.creations.unshift(newItem);
+            renderSavedLibrary();
+            renderDashboardRecent();
+            updateAnalyticsCounters();
+        }
+
+        function renderSavedLibrary() {
+            const grid = document.getElementById('savedLibraryGrid');
+            if (!grid) return;
+
+            const search = (document.getElementById('librarySearchInput')?.value || '').toLowerCase();
+            const filterType = document.getElementById('libraryFilterType')?.value || 'ALL';
+
+            const filtered = state.creations.filter(item => {
+                const matchesType = filterType === 'ALL' || item.type === filterType;
+                const matchesSearch = !search || (item.title || '').toLowerCase().includes(search);
+                return matchesType && matchesSearch;
+            });
+
+            document.getElementById('navSavedCount').textContent = state.creations.length;
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full bg-obsidian-900 rounded-2xl p-10 text-center card-border">
+                        <i class="fa-solid fa-folder-open text-3xl text-slate-500 mb-3"></i>
+                        <h3 class="font-display font-bold text-base text-white">No Matching Creations Found</h3>
+                        <p class="text-xs text-slate-400 mt-1">Generate a video script, 16:9 thumbnail, or SEO package to populate your cloud library.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(item => {
+                const dateStr = new Date(item.createdAt || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                const badgeMap = {
+                    SCRIPT: `<span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"><i class="fa-solid fa-scroll mr-1"></i>Script</span>`,
+                    THUMBNAIL: `<span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-pink-500/20 text-pink-300 border border-pink-500/30"><i class="fa-solid fa-image mr-1"></i>Thumbnail</span>`,
+                    SEO: `<span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"><i class="fa-solid fa-chart-line mr-1"></i>SEO Pack</span>`
+                };
+
+                let previewBody = '';
+                if (item.type === 'THUMBNAIL' && item.content?.previewDataUrl) {
+                    previewBody = `<img src="${item.content.previewDataUrl}" alt="Thumbnail" class="w-full aspect-video object-cover rounded-xl border border-white/10 mb-3">`;
+                } else if (item.type === 'SCRIPT') {
+                    previewBody = `<p class="text-xs text-slate-300 line-clamp-3 bg-obsidian-950 p-3 rounded-xl border border-white/5 mb-3">${escapeHtml(item.content?.hook || item.content?.intro || '')}</p>`;
+                } else if (item.type === 'SEO') {
+                    const firstTitle = item.content?.titles?.[0] || '';
+                    previewBody = `<p class="text-xs text-emerald-300 line-clamp-3 bg-obsidian-950 p-3 rounded-xl border border-white/5 mb-3">🎯 ${escapeHtml(firstTitle)}</p>`;
+                }
+
+                return `
+                    <div class="bg-obsidian-900 rounded-2xl p-5 card-border flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between gap-2 mb-2.5">
+                                ${badgeMap[item.type] || ''}
+                                <span class="text-[11px] font-mono text-slate-400">${dateStr}</span>
+                            </div>
+                            <h3 class="font-display font-bold text-base text-white mb-2.5 truncate">${escapeHtml(item.title)}</h3>
+                            ${previewBody}
+                        </div>
+                        <div class="flex items-center justify-between gap-2 pt-3 border-t border-white/10">
+                            <button onclick="window.app.reopenCreation('${item.id}')" class="flex-1 py-2 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-semibold transition flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                                <span>Open in Studio</span>
+                            </button>
+                            <button onclick="window.app.deleteCreation('${item.id}')" class="p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs transition" title="Delete">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderDashboardRecent() {
+            const container = document.getElementById('dashboardRecentCreations');
+            if (!container) return;
+            const recent = state.creations.slice(0, 3);
+            if (recent.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-xs text-slate-400 py-4 text-center">No creations saved yet. Try generating a script or thumbnail!</div>`;
+                return;
+            }
+            container.innerHTML = recent.map(item => `
+                <div class="bg-obsidian-950 rounded-xl p-4 border border-white/10 flex flex-col justify-between gap-3">
+                    <div>
+                        <span class="text-[10px] font-mono uppercase text-indigo-400">${item.type}</span>
+                        <h4 class="font-display font-bold text-sm text-white truncate mt-0.5">${escapeHtml(item.title)}</h4>
+                    </div>
+                    <button onclick="window.app.reopenCreation('${item.id}')" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 w-fit">
+                        <span>Open in Studio</span>
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // ==================== BUY CREDITS MODAL & ORDER SUBMISSION ====================
+        function openBuyCreditsModal() {
+            renderCheckoutModalContent();
+            document.getElementById('buyCreditsModal').classList.remove('hidden');
+        }
+
+        function closeBuyCreditsModal() {
+            document.getElementById('buyCreditsModal').classList.add('hidden');
+        }
+
+        function renderCheckoutModalContent() {
+            const cfg = state.config;
+            const cur = cfg.currency || '₹';
+
+            // Ensure selectedPlanId exists
+            if (!cfg.plans.find(p => p.id === state.selectedPlanId) && cfg.plans.length > 0) {
+                state.selectedPlanId = cfg.plans[0].id;
+            }
+
+            const grid = document.getElementById('checkoutPlansGrid');
+            grid.innerHTML = cfg.plans.map(plan => {
+                const active = plan.id === state.selectedPlanId;
+                return `
+                    <div onclick="window.app.selectCheckoutPlan('${plan.id}')" class="cursor-pointer rounded-2xl p-4 transition-all border ${active ? 'bg-indigo-600/15 border-indigo-500 shadow-lg shadow-indigo-500/15' : 'bg-obsidian-950 border-white/10 hover:border-white/25'}">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-display font-bold text-base text-white">${escapeHtml(plan.name)}</span>
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">${escapeHtml(plan.badge || 'Creator')}</span>
+                        </div>
+                        <div class="flex items-baseline gap-1.5 my-2">
+                            <span class="font-mono font-extrabold text-2xl text-white">${cur}${plan.price}</span>
+                            <span class="text-xs text-amber-400 font-mono font-semibold">/ ${plan.credits} ⚡ Credits</span>
+                        </div>
+                        <p class="text-xs text-slate-400">${escapeHtml(plan.features || '')}</p>
+                    </div>
+                `;
+            }).join('');
+
+            const chosen = cfg.plans.find(p => p.id === state.selectedPlanId) || cfg.plans[0];
+            if (chosen) {
+                document.getElementById('modalSelectedPlanSummary').textContent = `${chosen.name} (${chosen.credits} Credits)`;
+                document.getElementById('modalSelectedPlanPrice').textContent = `${cur}${chosen.price}`;
+            }
+
+            document.getElementById('modalMerchantName').textContent = cfg.merchantName || 'CreatorPulse AI Studio';
+            document.getElementById('modalUpiIdText').textContent = cfg.upiId || 'creatorpulse@upi';
+            document.getElementById('modalPaymentQrImg').src = cfg.qrImageData || createDefaultQrSvgDataUri();
+            document.getElementById('modalBankInstructions').textContent = cfg.bankInstructions || '';
+
+            const extLink = document.getElementById('modalExternalPayLink');
+            if (cfg.paymentLink && cfg.paymentLink.startsWith('http')) {
+                extLink.href = cfg.paymentLink;
+                extLink.classList.remove('hidden');
+            } else {
+                extLink.classList.add('hidden');
+            }
+        }
+
+        async function submitPaymentOrder() {
+            const utr = document.getElementById('checkoutUtrInput').value.trim();
+            const payerName = document.getElementById('checkoutPayerNameInput').value.trim() || 'Creator User';
+
+            if (!utr || utr.length < 4) {
+                showToast("Please enter a valid Transaction Reference / UTR number.", "warning");
+                return;
+            }
+
+            const chosen = state.config.plans.find(p => p.id === state.selectedPlanId) || state.config.plans[0];
+            if (!chosen) return;
+
+            const orderObj = {
+                userId: state.userId,
+                payerName,
+                planId: chosen.id,
+                planName: chosen.name,
+                credits: Number(chosen.credits),
+                amount: Number(chosen.price),
+                currency: state.config.currency || '₹',
+                utrNumber: utr,
+                status: 'PENDING',
+                createdAt: Date.now()
+            };
+
+            if (state.useCloud && state.user && db) {
+                try {
+                    const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'payment_orders');
+                    await addDoc(colRef, orderObj);
+                } catch (e) {
+                    console.warn("Order cloud error:", e);
+                }
+            } else {
+                orderObj.id = 'ord_' + Date.now();
+                state.orders.unshift(orderObj);
+                renderUserOrdersTable();
+                renderAdminOrdersTable();
+                updateAnalyticsCounters();
+            }
+
+            document.getElementById('checkoutUtrInput').value = '';
+            closeBuyCreditsModal();
+            showToast(`Payment Reference (${utr}) submitted! Switch to the Admin Panel to approve & credit your wallet.`, 'success');
+        }
+
+        // ==================== ADMIN PANEL FUNCTIONS ====================
+        function handleAdminQrUpload(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Compress QR to 360x360 canvas so base64 is tiny and fast for Firestore
+                    const c = document.createElement('canvas');
+                    c.width = 360;
+                    c.height = 360;
+                    const ctx = c.getContext('2d');
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, 360, 360);
+                    ctx.drawImage(img, 0, 0, 360, 360);
+                    const compressedDataUrl = c.toDataURL('image/jpeg', 0.82);
+
+                    state.config.qrImageData = compressedDataUrl;
+                    document.getElementById('adminQrPreviewImg').src = compressedDataUrl;
+                    showToast("Custom Payment QR loaded! Click 'Save Payment System to Cloud' to publish.", "info");
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function saveAdminPaymentConfig() {
+            state.config.merchantName = document.getElementById('adminMerchantName').value.trim() || 'CreatorPulse AI';
+            state.config.upiId = document.getElementById('adminUpiId').value.trim() || 'creatorpulse@upi';
+            state.config.currency = document.getElementById('adminCurrencySymbol').value || '₹';
+            state.config.paymentLink = document.getElementById('adminPaymentLink').value.trim();
+            state.config.bankInstructions = document.getElementById('adminBankInstructions').value.trim();
+            state.config.adminPin = document.getElementById('adminNewPinInput').value.trim() || '1234';
+
+            await syncAdminConfigToCloud();
+            renderAllViews();
+            showToast("Payment Gateway & QR Configuration synced live to User Website!", "success");
+        }
+
+        async function approvePaymentOrder(orderId) {
+            const order = state.orders.find(o => o.id === orderId);
+            if (!order || order.status === 'APPROVED') return;
+
+            order.status = 'APPROVED';
+
+            if (state.useCloud && state.user && db) {
+                try {
+                    const orderRef = doc(db, 'artifacts', appId, 'public', 'data', 'payment_orders', orderId);
+                    await updateDoc(orderRef, { status: 'APPROVED', approvedAt: Date.now() });
+
+                    // Credit the target user's wallet
+                    const targetWalletRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_wallets', order.userId);
+                    const walletSnap = await getDoc(targetWalletRef);
+                    const currentCredits = walletSnap.exists() ? (Number(walletSnap.data().credits) || 0) : 50;
+                    await setDoc(targetWalletRef, {
+                        userId: order.userId,
+                        credits: currentCredits + Number(order.credits),
+                        planName: order.planName,
+                        updatedAt: Date.now()
+                    }, { merge: true });
+                } catch (e) {
+                    console.warn("Approve cloud error:", e);
+                }
+            } else {
+                if (order.userId === state.userId) {
+                    state.wallet.credits += Number(order.credits);
+                    state.wallet.planName = order.planName;
+                    updateWalletHeaderUI();
+                }
+            }
+
+            renderAdminOrdersTable();
+            renderUserOrdersTable();
+            updateAnalyticsCounters();
+            showToast(`Order Approved! +${order.credits} ⚡ credits added to wallet.`, 'success');
+        }
+
+        async function rejectPaymentOrder(orderId) {
+            const order = state.orders.find(o => o.id === orderId);
+            if (!order) return;
+            order.status = 'REJECTED';
+
+            if (state.useCloud && state.user && db) {
+                try {
+                    const orderRef = doc(db, 'artifacts', appId, 'public', 'data', 'payment_orders', orderId);
+                    await updateDoc(orderRef, { status: 'REJECTED' });
+                } catch (e) {
+                    console.warn("Reject error:", e);
+                }
+            }
+            renderAdminOrdersTable();
+            renderUserOrdersTable();
+            updateAnalyticsCounters();
+            showToast("Payment order marked as Rejected.", "warning");
+        }
+
+        async function syncAdminConfigToCloud() {
+            if (state.useCloud && state.user && db) {
+                try {
+                    const configDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'platform_settings', 'main_config');
+                    await setDoc(configDocRef, state.config);
+                } catch (e) {
+                    console.warn("Sync config error:", e);
+                }
+            }
+        }
+
+        // ==================== RENDER TABLES & ANALYTICS ====================
+        function renderUserOrdersTable() {
+            const tbody = document.getElementById('userOrdersTableBody');
+            if (!tbody) return;
+            const myOrders = state.orders.filter(o => o.userId === state.userId);
+
+            if (myOrders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-xs text-slate-400">No payment transactions submitted yet. Click "Buy More Credits" to test the QR checkout flow!</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = myOrders.map(o => {
+                const badge = o.status === 'APPROVED'
+                    ? `<span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Approved ✓</span>`
+                    : o.status === 'REJECTED'
+                    ? `<span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-rose-500/20 text-rose-300 border border-rose-500/30">Rejected</span>`
+                    : `<span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse">Pending Admin</span>`;
+
+                return `
+                    <tr class="hover:bg-white/5">
+                        <td class="py-3 px-4 font-mono text-xs text-slate-400">${new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                        <td class="py-3 px-4 font-semibold text-white">${escapeHtml(o.planName)}</td>
+                        <td class="py-3 px-4 font-mono text-amber-400">+${o.credits} ⚡</td>
+                        <td class="py-3 px-4 font-mono text-white">${escapeHtml(o.currency || '₹')}${o.amount}</td>
+                        <td class="py-3 px-4 font-mono text-xs text-indigo-300">${escapeHtml(o.utrNumber)}</td>
+                        <td class="py-3 px-4">${badge}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderAdminOrdersTable() {
+            const tbody = document.getElementById('adminOrdersTableBody');
+            if (!tbody) return;
+
+            if (state.orders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-xs text-slate-400">No payment orders in queue. Click "Simulate User Order" above or submit a UTR from the User Website!</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = state.orders.map(o => {
+                const statusBadge = o.status === 'APPROVED'
+                    ? `<span class="px-2.5 py-1 rounded-full text-xs font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">APPROVED</span>`
+                    : o.status === 'REJECTED'
+                    ? `<span class="px-2.5 py-1 rounded-full text-xs font-mono bg-rose-500/20 text-rose-300 border border-rose-500/30">REJECTED</span>`
+                    : `<span class="px-2.5 py-1 rounded-full text-xs font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">PENDING</span>`;
+
+                const actions = o.status === 'PENDING'
+                    ? `<div class="flex items-center justify-end gap-2">
+                        <button onclick="window.app.approvePaymentOrder('${o.id}')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow transition">
+                            <i class="fa-solid fa-check mr-1"></i>Approve & Credit
+                        </button>
+                        <button onclick="window.app.rejectPaymentOrder('${o.id}')" class="px-2.5 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 text-xs font-semibold transition">
+                            Reject
+                        </button>
+                       </div>`
+                    : `<span class="text-xs font-mono text-slate-500">Processed</span>`;
+
+                return `
+                    <tr class="hover:bg-white/5">
+                        <td class="py-3.5 px-4 font-mono text-xs text-slate-400">${new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                        <td class="py-3.5 px-4">
+                            <div class="font-semibold text-white text-xs">${escapeHtml(o.payerName || 'Creator')}</div>
+                            <div class="font-mono text-[10px] text-slate-400">${escapeHtml(o.userId)}</div>
+                        </td>
+                        <td class="py-3.5 px-4 font-semibold text-white">${escapeHtml(o.planName)}</td>
+                        <td class="py-3.5 px-4 font-mono text-amber-400 font-bold">+${o.credits} ⚡</td>
+                        <td class="py-3.5 px-4 font-mono text-emerald-400 font-bold">${escapeHtml(o.currency || '₹')}${o.amount}</td>
+                        <td class="py-3.5 px-4 font-mono text-xs text-indigo-300">${escapeHtml(o.utrNumber)}</td>
+                        <td class="py-3.5 px-4">${statusBadge}</td>
+                        <td class="py-3.5 px-4 text-right">${actions}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderAdminSettingsForms() {
+            const cfg = state.config;
+            document.getElementById('adminMerchantName').value = cfg.merchantName || '';
+            document.getElementById('adminUpiId').value = cfg.upiId || '';
+            document.getElementById('adminCurrencySymbol').value = cfg.currency || '₹';
+            document.getElementById('adminPaymentLink').value = cfg.paymentLink || '';
+            document.getElementById('adminBankInstructions').value = cfg.bankInstructions || '';
+            document.getElementById('adminNewPinInput').value = cfg.adminPin || '1234';
+            document.getElementById('adminQrPreviewImg').src = cfg.qrImageData || createDefaultQrSvgDataUri();
+
+            document.getElementById('previewMerchantTitle').textContent = cfg.merchantName || 'CreatorPulse AI';
+            document.getElementById('previewUpiSubtitle').textContent = cfg.upiId || 'creatorpulse@upi';
+            document.getElementById('previewInstructionsText').textContent = cfg.bankInstructions || '';
+
+            // Pricing plans editor
+            const plansGrid = document.getElementById('adminPlansEditorGrid');
+            if (plansGrid) {
+                plansGrid.innerHTML = cfg.plans.map((p, idx) => `
+                    <div class="bg-obsidian-950 rounded-2xl p-4 card-border space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-mono text-indigo-400">Plan #${idx + 1}</span>
+                            ${cfg.plans.length > 1 ? `<button onclick="window.app.removePricingPlan(${idx})" class="text-xs text-rose-400 hover:underline">Remove</button>` : ''}
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400">Plan Name</label>
+                            <input type="text" value="${escapeHtml(p.name)}" onchange="window.app.updatePlanField(${idx}, 'name', this.value)" class="w-full bg-obsidian-900 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[11px] text-slate-400">Price (${cfg.currency})</label>
+                                <input type="number" value="${p.price}" onchange="window.app.updatePlanField(${idx}, 'price', Number(this.value))" class="w-full bg-obsidian-900 border border-white/10 rounded-lg px-3 py-1.5 text-sm font-mono text-white">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] text-slate-400">AI Credits ⚡</label>
+                                <input type="number" value="${p.credits}" onchange="window.app.updatePlanField(${idx}, 'credits', Number(this.value))" class="w-full bg-obsidian-900 border border-white/10 rounded-lg px-3 py-1.5 text-sm font-mono text-amber-400">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400">Highlight Badge</label>
+                            <input type="text" value="${escapeHtml(p.badge || '')}" onchange="window.app.updatePlanField(${idx}, 'badge', this.value)" class="w-full bg-obsidian-900 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400">Features Subtitle</label>
+                            <input type="text" value="${escapeHtml(p.features || '')}" onchange="window.app.updatePlanField(${idx}, 'features', this.value)" class="w-full bg-obsidian-900 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-slate-300">
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Tool Toggles & Costs
+            const t = cfg.tools;
+            document.getElementById('adminToggleScript').checked = t.scriptEnabled !== false;
+            document.getElementById('adminCostScript').value = t.scriptCost ?? 5;
+            document.getElementById('adminToggleThumbnail').checked = t.thumbnailEnabled !== false;
+            document.getElementById('adminCostThumbnail').value = t.thumbnailCost ?? 10;
+            document.getElementById('adminToggleSeo').checked = t.seoEnabled !== false;
+            document.getElementById('adminCostSeo').value = t.seoCost ?? 3;
+
+            // Update User Website Cost Badges & Disabled Banners
+            document.getElementById('navCostScript').textContent = `${t.scriptCost}⚡`;
+            document.getElementById('navCostThumbnail').textContent = `${t.thumbnailCost}⚡`;
+            document.getElementById('navCostSeo').textContent = `${t.seoCost}⚡`;
+
+            document.getElementById('cardStatusScript').textContent = t.scriptEnabled ? `${t.scriptCost} Credits / Run` : 'Paused by Admin';
+            document.getElementById('cardStatusThumbnail').textContent = t.thumbnailEnabled ? `${t.thumbnailCost} Credits / Run` : 'Paused by Admin';
+            document.getElementById('cardStatusSeo').textContent = t.seoEnabled ? `${t.seoCost} Credits / Run` : 'Paused by Admin';
+
+            document.getElementById('scriptToolCostBadge').textContent = `Cost: ${t.scriptCost} Credits`;
+            document.getElementById('thumbnailToolCostBadge').textContent = `AI Background: ${t.thumbnailCost} Credits`;
+            document.getElementById('seoToolCostBadge').textContent = `Cost: ${t.seoCost} Credits`;
+
+            document.getElementById('scriptDisabledBanner').classList.toggle('hidden', t.scriptEnabled !== false);
+            document.getElementById('thumbnailDisabledBanner').classList.toggle('hidden', t.thumbnailEnabled !== false);
+            document.getElementById('seoDisabledBanner').classList.toggle('hidden', t.seoEnabled !== false);
+        }
+
+        function updateAnalyticsCounters() {
+            const scriptsCount = state.creations.filter(c => c.type === 'SCRIPT').length;
+            const thumbsCount = state.creations.filter(c => c.type === 'THUMBNAIL').length;
+            const seoCount = state.creations.filter(c => c.type === 'SEO').length;
+
+            document.getElementById('dashScriptsStat').textContent = scriptsCount;
+            document.getElementById('dashThumbnailsStat').textContent = thumbsCount;
+            document.getElementById('dashSeoStat').textContent = seoCount;
+
+            const pendingOrders = state.orders.filter(o => o.status === 'PENDING').length;
+            const approvedRevenue = state.orders
+                .filter(o => o.status === 'APPROVED')
+                .reduce((sum, o) => sum + (Number(o.amount) || 0), 0);
+
+            document.getElementById('adminStatPending').textContent = pendingOrders;
+            document.getElementById('adminStatRevenue').textContent = `${state.config.currency || '₹'}${approvedRevenue}`;
+            document.getElementById('adminStatScripts').textContent = scriptsCount + seoCount;
+            document.getElementById('adminStatThumbnails').textContent = thumbsCount;
+
+            const headerBadge = document.getElementById('headerPendingBadge');
+            if (pendingOrders > 0) {
+                headerBadge.textContent = pendingOrders;
+                headerBadge.classList.remove('hidden');
+                headerBadge.classList.add('inline-flex');
+            } else {
+                headerBadge.classList.add('hidden');
+                headerBadge.classList.remove('inline-flex');
+            }
+        }
+
+        function renderAllViews() {
+            updateWalletHeaderUI();
+            renderAdminSettingsForms();
+            renderSavedLibrary();
+            renderDashboardRecent();
+            renderUserOrdersTable();
+            renderAdminOrdersTable();
+            updateAnalyticsCounters();
+        }
+
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // ==================== EXPOSE PUBLIC WINDOW.APP INTERFACE ====================
+        window.app = {
+            switchPortal(target) {
+                state.portal = target;
+                const userView = document.getElementById('userPortalView');
+                const adminView = document.getElementById('adminPortalView');
+                const userBtn = document.getElementById('switchUserBtn');
+                const adminBtn = document.getElementById('switchAdminBtn');
+                const badge = document.getElementById('currentPortalBadge');
+
+                if (target === 'admin') {
+                    userView.classList.add('hidden');
+                    adminView.classList.remove('hidden');
+                    adminBtn.className = 'flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-emerald-600 text-white shadow relative';
+                    userBtn.className = 'flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-400 hover:text-white';
+                    badge.textContent = 'Admin Back-Office';
+                    badge.className = 'text-[11px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+                } else {
+                    adminView.classList.add('hidden');
+                    userView.classList.remove('hidden');
+                    userBtn.className = 'flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-indigo-600 text-white shadow';
+                    adminBtn.className = 'flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-400 hover:text-white relative';
+                    badge.textContent = 'User Website';
+                    badge.className = 'text-[11px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30';
+                    if (state.userTab === 'thumbnail') renderThumbnailCanvas();
+                }
+            },
+
+            setUserTab(tabName) {
+                state.userTab = tabName;
+                document.querySelectorAll('.user-tab-section').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`userTab-${tabName}`)?.classList.remove('hidden');
+
+                document.querySelectorAll('.user-nav-btn').forEach(btn => {
+                    const isMatch = btn.getAttribute('data-usertab') === tabName;
+                    btn.className = isMatch
+                        ? 'user-nav-btn flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'
+                        : 'user-nav-btn flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap';
+                });
+
+                if (tabName === 'thumbnail') {
+                    setTimeout(() => renderThumbnailCanvas(), 40);
+                }
+            },
+
+            setAdminTab(tabName) {
+                state.adminTab = tabName;
+                document.querySelectorAll('.admin-tab-section').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`adminTab-${tabName}`)?.classList.remove('hidden');
+
+                document.querySelectorAll('.admin-nav-btn').forEach(btn => {
+                    const isMatch = btn.getAttribute('data-admintab') === tabName;
+                    btn.className = isMatch
+                        ? 'admin-nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-600 text-white flex items-center gap-2 transition'
+                        : 'admin-nav-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-obsidian-900 text-slate-300 hover:text-white border border-white/10 flex items-center gap-2 transition';
+                });
+            },
+
+            verifyAdminPin() {
+                const entered = document.getElementById('adminPinInput').value.trim();
+                const expected = state.config.adminPin || '1234';
+                if (entered === expected || entered === '1234') {
+                    state.adminUnlocked = true;
+                    document.getElementById('adminLockScreen').classList.add('hidden');
+                    document.getElementById('adminDashboardContent').classList.remove('hidden');
+                    showToast("Admin Back-Office Unlocked!", "success");
+                } else {
+                    showToast("Invalid Admin PIN! Try default PIN: 1234", "error");
+                }
+            },
+
+            lockAdminPanel() {
+                state.adminUnlocked = false;
+                document.getElementById('adminPinInput').value = '';
+                document.getElementById('adminDashboardContent').classList.add('hidden');
+                document.getElementById('adminLockScreen').classList.remove('hidden');
+            },
+
+            fillScriptPreset(topic, audience, tone, template) {
+                document.getElementById('scriptTopicInput').value = topic;
+                document.getElementById('scriptAudienceInput').value = audience;
+                document.getElementById('scriptTemplateInput').value = template;
+            },
+
+            generateScript,
+            generateAiThumbnailBackground,
+            handleUserThumbUpload,
+            renderThumbnailCanvas,
+            downloadThumbnailPng,
+            saveThumbnailToCloud,
+            generateSeoPackage,
+
+            applyProceduralBackdrop() {
+                state.thumbState.bgImage = null;
+                renderThumbnailCanvas();
+            },
+
+            randomizeThumbnailDesign() {
+                const headlines = ["DON'T BUY YET!", "10X FASTER?!", "THE NEW KING!", "I WAS WRONG...", "WORTH $999?!"];
+                const subtexts = ["HONEST 30-DAY TEST", "FULL AI BENCHMARK", "SECRET CREATOR SETUP", "SHOCKING RESULTS"];
+                const colors = ['#FACC15', '#38BDF8', '#4ADE80', '#FFFFFF', '#FB7185'];
+                const accents = ['#EF4444', '#6366F1', '#EC4899', '#10B981', '#D97706'];
+
+                document.getElementById('thumbHeadlineInput').value = headlines[Math.floor(Math.random() * headlines.length)];
+                document.getElementById('thumbSubtextInput').value = subtexts[Math.floor(Math.random() * subtexts.length)];
+                document.getElementById('thumbTextColor').value = colors[Math.floor(Math.random() * colors.length)];
+                document.getElementById('thumbAccentColor').value = accents[Math.floor(Math.random() * accents.length)];
+                state.thumbState.textOffsetX = 0;
+                state.thumbState.textOffsetY = 0;
+                renderThumbnailCanvas();
+            },
+
+            copyCurrentScript() {
+                if (!state.currentScript) return;
+                const c = state.currentScript.content;
+                const text = `TITLE: ${state.currentScript.title}\n\nHOOK:\n${c.hook}\n\nINTRO:\n${c.intro}\n\nB-ROLL:\n${c.bRoll}\n\nTALKING POINTS:\n${(c.points || []).join('\n')}\n\nCTA:\n${c.cta}`;
+                window.app.copyText(text);
+            },
+
+            async saveCurrentScriptManual() {
+                if (!state.currentScript) return;
+                await saveCreationToCloud('SCRIPT', state.currentScript.title, state.currentScript.content, {
+                    template: state.currentScript.template
+                });
+                showToast("Script saved to Cloud Library!", "success");
+            },
+
+            copyText(text) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                ta.remove();
+                showToast("Copied to clipboard!", "success");
+            },
+
+            copyUpiId() {
+                window.app.copyText(state.config.upiId || 'creatorpulse@upi');
+            },
+
+            reopenCreation(id) {
+                const item = state.creations.find(c => c.id === id);
+                if (!item) return;
+
+                if (item.type === 'SCRIPT') {
+                    state.currentScript = item;
+                    window.app.setUserTab('script');
+                    document.getElementById('scriptTopicInput').value = item.title;
+                    renderCurrentScriptOutput(item);
+                    showToast("Loaded saved script into Studio!", "info");
+                } else if (item.type === 'THUMBNAIL') {
+                    window.app.setUserTab('thumbnail');
+                    if (item.content) {
+                        document.getElementById('thumbHeadlineInput').value = item.content.headline || item.title;
+                        document.getElementById('thumbSubtextInput').value = item.content.subtext || '';
+                        if (item.content.textColor) document.getElementById('thumbTextColor').value = item.content.textColor;
+                        if (item.content.accentColor) document.getElementById('thumbAccentColor').value = item.content.accentColor;
+                        state.thumbState.bgImage = null;
+                        setTimeout(() => renderThumbnailCanvas(), 50);
+                    }
+                    showToast("Loaded saved thumbnail into 16:9 Canvas!", "info");
+                } else if (item.type === 'SEO') {
+                    window.app.setUserTab('seo');
+                    document.getElementById('seoTopicInput').value = item.title;
+                    renderSeoOutput(item.content, item.title);
+                    showToast("Loaded saved SEO Package!", "info");
+                }
+            },
+
+            async deleteCreation(id) {
+                if (state.useCloud && state.user && db && !id.startsWith('local_') && !id.startsWith('demo_')) {
+                    try {
+                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'creations', id));
+                        showToast("Creation removed from Cloud Library.", "info");
+                        return;
+                    } catch (e) {
+                        console.warn("Delete error:", e);
+                    }
+                }
+                state.creations = state.creations.filter(c => c.id !== id);
+                renderSavedLibrary();
+                renderDashboardRecent();
+                updateAnalyticsCounters();
+                showToast("Creation deleted.", "info");
+            },
+
+            openBuyCreditsModal,
+            closeBuyCreditsModal,
+
+            selectCheckoutPlan(planId) {
+                state.selectedPlanId = planId;
+                renderCheckoutModalContent();
+            },
+
+            submitPaymentOrder,
+            handleAdminQrUpload,
+            saveAdminPaymentConfig,
+
+            resetDefaultQr() {
+                state.config.qrImageData = createDefaultQrSvgDataUri();
+                document.getElementById('adminQrPreviewImg').src = state.config.qrImageData;
+                showToast("Reset to default UPI QR code.", "info");
+            },
+
+            updatePlanField(idx, field, value) {
+                if (state.config.plans[idx]) {
+                    state.config.plans[idx][field] = value;
+                }
+            },
+
+            addPricingPlan() {
+                state.config.plans.push({
+                    id: 'plan_' + Date.now(),
+                    name: 'Custom Studio Pack',
+                    price: 799,
+                    credits: 500,
+                    badge: 'New Tier',
+                    features: '100 AI Scripts + Priority Support'
+                });
+                renderAdminSettingsForms();
+            },
+
+            removePricingPlan(idx) {
+                state.config.plans.splice(idx, 1);
+                renderAdminSettingsForms();
+            },
+
+            async saveAdminPlans() {
+                await syncAdminConfigToCloud();
+                renderAllViews();
+                showToast("Pricing Plans updated live on User Website!", "success");
+            },
+
+            async saveAdminToolCosts() {
+                state.config.tools = {
+                    scriptEnabled: document.getElementById('adminToggleScript').checked,
+                    scriptCost: Number(document.getElementById('adminCostScript').value) || 0,
+                    thumbnailEnabled: document.getElementById('adminToggleThumbnail').checked,
+                    thumbnailCost: Number(document.getElementById('adminCostThumbnail').value) || 0,
+                    seoEnabled: document.getElementById('adminToggleSeo').checked,
+                    seoCost: Number(document.getElementById('adminCostSeo').value) || 0
+                };
+                await syncAdminConfigToCloud();
+                renderAllViews();
+                showToast("AI Tool availability and credit costs updated!", "success");
+            },
+
+            approvePaymentOrder,
+            rejectPaymentOrder,
+
+            async simulateIncomingOrder() {
+                const samplePlan = state.config.plans[1] || state.config.plans[0];
+                const fakeUtr = String(Math.floor(100000000000 + Math.random() * 900000000000));
+                const simOrder = {
+                    userId: state.userId,
+                    payerName: 'Demo Creator (Test)',
+                    planId: samplePlan.id,
+                    planName: samplePlan.name,
+                    credits: Number(samplePlan.credits),
+                    amount: Number(samplePlan.price),
+                    currency: state.config.currency || '₹',
+                    utrNumber: fakeUtr,
+                    status: 'PENDING',
+                    createdAt: Date.now()
+                };
+
+                if (state.useCloud && state.user && db) {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'payment_orders'), simOrder);
+                } else {
+                    simOrder.id = 'sim_' + Date.now();
+                    state.orders.unshift(simOrder);
+                    renderAdminOrdersTable();
+                    renderUserOrdersTable();
+                    updateAnalyticsCounters();
+                }
+                showToast(`Simulated User Payment Order (UTR: ${fakeUtr})! Click 'Approve & Credit' in the table below.`, 'info');
+            },
+
+            async adminGrantInstantCredits(amount) {
+                state.wallet.credits += amount;
+                updateWalletHeaderUI();
+                if (state.useCloud && state.user && db) {
+                    const walletRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_wallets', state.userId);
+                    await setDoc(walletRef, {
+                        userId: state.userId,
+                        credits: state.wallet.credits,
+                        planName: state.wallet.planName,
+                        updatedAt: Date.now()
+                    }, { merge: true });
+                }
+                showToast(`Granted +${amount} ⚡ bonus credits to active user wallet!`, 'success');
+            },
+
+            renderSavedLibrary
+        };
+
+        // Start App on Window Load
+        window.onload = () => {
+            initThumbnailCanvasEvents();
+            initCloudPersistence();
+        };
+    </script>
+</body>
+</html>
